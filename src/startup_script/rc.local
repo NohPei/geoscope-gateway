@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+screen -dm -S node1 /home/geoscope/startup_script/start_node_1
+screen -dm -S node2 /home/geoscope/startup_script/start_node_2
+screen -dm -S node3 /home/geoscope/startup_script/start_node_3
+screen -dm -S node4 /home/geoscope/startup_script/start_node_4
+screen -dm -S node5 /home/geoscope/startup_script/start_node_5
+
+exit 0

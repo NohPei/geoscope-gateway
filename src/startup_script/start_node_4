@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python3.6 /home/geoscope/dev/geoscope/geoscope-4.py
