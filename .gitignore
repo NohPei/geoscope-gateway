@@ -8,7 +8,7 @@
 # Google API Credentials
 assets/*.json
 
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
