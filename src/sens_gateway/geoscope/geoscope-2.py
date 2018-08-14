@@ -1,3 +1,15 @@
+import sys
+from pathlib import Path  # if you haven't already done so
+file = Path(__file__).resolve()
+parent, root = file.parent, file.parents[1]
+sys.path.append(str(root))
+
+# Additionally remove the current file's directory from sys.path
+try:
+    sys.path.remove(str(parent))
+except ValueError:  # Already removed
+    pass
+
 from mqtt_cli import mqtt_cli
 
 API_KEY = "sc-afdb65da-a8ac-4b37-b4ff-ab025578086b"
@@ -11,7 +23,7 @@ BROKER_PORT = 18884
 
 def main():
     mqtt_client = mqtt_cli(ip=BROKER_IP, port=BROKER_PORT, id=MQTT_CLIENT_ID,
-                           topic=MQTT_TOPIC, key=API_KEY, secret=API_SECRET)
+                           topic=MQTT_TOPIC)
     mqtt_client.start()
 
 
