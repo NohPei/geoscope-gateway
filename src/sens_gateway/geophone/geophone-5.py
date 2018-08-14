@@ -1,3 +1,15 @@
+import sys
+from pathlib import Path  # if you haven't already done so
+file = Path(__file__).resolve()
+parent, root = file.parent, file.parents[1]
+sys.path.append(str(root))
+
+# Additionally remove the current file's directory from sys.path
+try:
+    sys.path.remove(str(parent))
+except ValueError:  # Already removed
+    pass
+
 from socket_server import socket_server
 
 API_KEY = "sc-ea61d0b6-c66e-40d8-9371-81271f6907cb"
@@ -7,7 +19,7 @@ DEVICE_IP = "192.168.60.133"
 
 
 def main():
-    socket_serv = socket_server(ip=DEVICE_IP, key=API_KEY, secret=API_SECRET)
+    socket_serv = socket_server(ip=DEVICE_IP)
     socket_serv.start()
 
 
