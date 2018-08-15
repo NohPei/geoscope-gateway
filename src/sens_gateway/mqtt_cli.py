@@ -43,7 +43,7 @@ class mqtt_cli:
 
     def asyn_data_push(self, payloads):
         self.file_mng.push_data(
-            payloads=self.payloads.clear(), file_name=self.timer.time, date=self.timer.date)
+            payloads=payloads, file_name=self.timer.time, date=self.timer.date)
 
     def on_message(self, client, userdata, message):
         self.timer.now()
