@@ -85,11 +85,14 @@ class file_manager:
             json.dump(payloads, out_file)
         print(f"> Created file: {file_name}.json")
 
-        self.create_date_folder(date=date)
-        self.create_sensor_folder()
         # Upload file
-        self.google_drive_service.upload_file(
+        [is_valid, status] = self.google_drive_service.upload_file(
             path=path_w_filename, file_name=f"{file_name}.json", folder_name=self.metadata["sensor_folder_name"], parent_id=self.metadata["date_folder_id"], is_teamdrive=True, team_id=self.TEAM_ID)
+
+        if not is_valid and status == 404:
+            self.create_date_folder(date=date)
+            self.create_sensor_folder()
+            self.push_data(payloads, file_name, date)
 
     def set_sensor_name(self, sensor_name):
         self.metadata["sensor_name"] = sensor_name

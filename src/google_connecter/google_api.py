@@ -107,13 +107,13 @@ class google_drive:
             finally:
                 if is_valid:
                     print(f'> File uploaded. ID: {file_id}')
-                    return True
+                    return [True, 200]
                 else:
                     print(f'> Cannot upload file {file_name}')
-                    return False
+                    return [False, 504]
         else:
             print(f'> Folder {folder_name} is not exist')
-            return False
+            return [False, 404]
 
 
 def main():

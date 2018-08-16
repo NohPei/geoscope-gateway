@@ -41,13 +41,16 @@ class mqtt_cli:
         self.file_mng = file_manager(
             root_folder_name="Mixed pen", sensor_name=id)
 
+        self.file_mng.create_date_folder(self.timer.date)
+        self.file_mng.set_sensor_name(id)
+
     def asyn_data_push(self, payloads):
         self.file_mng.push_data(
             payloads=payloads, file_name=self.timer.time, date=self.timer.date)
 
     def on_message(self, client, userdata, message):
         self.timer.now()
-        if self.data_counter == 40:
+        if self.data_counter == 100:
             self.data_counter = 1
             tmp_payloads = self.payloads.copy()
             t = Thread(target=self.asyn_data_push,
@@ -64,8 +67,8 @@ class mqtt_cli:
         sensor_data['ts'] = self.timer.timestamp
         sensor_data['timestamp'] = self.timer.timestamp
         self.payloads.append(sensor_data)
-        print("On message Timestamp: {}\tTopic: {}\tcouter:{}\tUptime: {:.3f}".format(
-            self.timer.date, ttopic, self.counter, upTim))
+        # print("On message Timestamp: {}\tTopic: {}\tcouter:{}\tUptime: {:.3f}".format(
+        #     self.timer.date, ttopic, self.counter, upTim))
         self.counter = self.counter + 1
 
     def start(self):
