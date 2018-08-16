@@ -5,7 +5,7 @@ from oauth2client import file, client, tools
 
 
 class google_drive:
-    def __init__(self, scope="https://www.googleapis.com/auth/drive", token="assets/token.json", cred="assets/credentials.json"):
+    def __init__(self, scope="https://www.googleapis.com/auth/drive", token="/home/geoscope/dev/geoscope-gateway/assets/token.json", cred="/home/geoscope/dev/geoscope-gateway/assets/credentials.json"):
         storage = file.Storage(token)
         credentrial = storage.get()
         if not credentrial or credentrial.invalid:
