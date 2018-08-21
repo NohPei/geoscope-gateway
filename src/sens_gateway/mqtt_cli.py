@@ -57,7 +57,6 @@ class mqtt_cli:
             # t.daemon = True
             t.start()
             self.payloads.clear()
-            self.payloads.pop()
         else:
             self.data_counter = self.data_counter + 1
 
@@ -67,8 +66,8 @@ class mqtt_cli:
         sensor_data['ts'] = self.timer.timestamp
         sensor_data['timestamp'] = self.timer.timestamp
         self.payloads.append(sensor_data)
-        # print("On message Timestamp: {}\tTopic: {}\tcouter:{}\tUptime: {:.3f}".format(
-        #     self.timer.date, ttopic, self.counter, upTim))
+        print("On message Timestamp: {}\tTopic: {}\tcouter:{}\tUptime: {:.3f}".format(
+            self.timer.date, ttopic, self.counter, upTim))
         self.counter = self.counter + 1
 
     def start(self):
