@@ -37,9 +37,6 @@ class socket_server:
 
         self.timer = date_time()
 
-        self.file_mng = file_manager(
-            root_folder_name="Individual pen", sensor_name=id)
-
     def convert_data(self, data_array):
         data_converted = '['
         leng = int(len(data_array) / 2) - 1
@@ -53,7 +50,20 @@ class socket_server:
         return data_converted
 
     def asyn_data_push(self, payloads):
-        self.file_mng.push_data(
+        path = f"data/Individual pen/{self.timer.date}/{self.UUID}"
+        path_w_filename = f"{path}/{self.timer.time}.json"
+        # Create file directory
+        os.makedirs(path, exist_ok=True)
+        # Create json file
+        with open(path_w_filename, 'w') as out_file:
+            json.dump(payloads, out_file)
+        print(f"> Created file: {self.timer.time}.json")
+
+        file_mng = file_manager(
+            root_folder_name="Individual pen", sensor_name=id)
+        file_mng.create_date_folder(self.timer.date)
+        file_mng.set_sensor_name(self.UUID)
+        file_mng.push_data(
             payloads=payloads, file_name=self.timer.time, date=self.timer.date)
 
     def on_message(self, ws, message):
@@ -73,6 +83,7 @@ class socket_server:
         if not self.is_first_time:
             print(f"> GEOSCOPE UUID: {message}")
             self.payload["uuid"] = message
+            self.UUID = message
             self.is_first_time = True
             self.file_mng.set_sensor_name(message)
         else:

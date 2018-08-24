@@ -2,5 +2,6 @@
     "python.pythonPath": "C:/ProgramData/Anaconda3/envs/gatewayvenv3/python.exe",
     "python.linting.flake8Args": [
         "--ignode=E402"
-    ]
+    ],
+    "files.eol": "\n"
 }

@@ -11,6 +11,7 @@ except ValueError:  # Already removed
     pass
 
 import sys
+import os
 import paho.mqtt.client as mqtt
 import time
 import json
@@ -39,6 +40,15 @@ class mqtt_cli:
         self.timer = date_time()
 
     def asyn_data_push(self, payloads):
+        path = f"data/Mixed pen/{self.timer.date}/{self.MQTT_CLIENT_ID}"
+        path_w_filename = f"{path}/{self.timer.time}.json"
+        # Create file directory
+        os.makedirs(path, exist_ok=True)
+        # Create json file
+        with open(path_w_filename, 'w') as out_file:
+            json.dump(payloads, out_file)
+        print(f"> Created file: {self.timer.time}.json")
+
         file_mng = file_manager(
             root_folder_name="Mixed pen", sensor_name=self.MQTT_CLIENT_ID)
 
