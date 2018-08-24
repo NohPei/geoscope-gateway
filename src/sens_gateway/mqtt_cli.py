@@ -54,7 +54,7 @@ class mqtt_cli:
         file_mng = file_manager(
             root_folder_name="Mixed pen", sensor_name=self.MQTT_CLIENT_ID)
 
-        file_mng.create_date_folder(folder_namee)
+        file_mng.create_date_folder(folder_name)
         file_mng.set_sensor_name(self.MQTT_CLIENT_ID)
         file_mng.push_data(
             payloads=payloads, file_name=file_name, date=folder_name)
