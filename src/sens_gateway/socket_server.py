@@ -50,25 +50,28 @@ class socket_server:
         return data_converted
 
     def asyn_data_push(self, payloads):
-        path = f"data/Individual pen/{self.timer.date}/{self.UUID}"
-        path_w_filename = f"{path}/{self.timer.time}.json"
+        folder_name = self.timer.date
+        file_name = self.timer.time
+
+        path = f"data/Individual pen/{folder_name}/{self.UUID}"
+        path_w_filename = f"{path}/{file_name}.json"
         # Create file directory
         os.makedirs(path, exist_ok=True)
         # Create json file
         with open(path_w_filename, 'w') as out_file:
             json.dump(payloads, out_file)
-        print(f"> Created file: {self.timer.time}.json")
+        print(f"> Created file: {file_name}.json")
 
         file_mng = file_manager(
             root_folder_name="Individual pen", sensor_name=id)
-        file_mng.create_date_folder(self.timer.date)
+        file_mng.create_date_folder(folder_name)
         file_mng.set_sensor_name(self.UUID)
         file_mng.push_data(
-            payloads=payloads, file_name=self.timer.time, date=self.timer.date)
+            payloads=payloads, file_name=file_name, date=folder_name)
 
     def on_message(self, ws, message):
         self.timer.now()
-        if self.data_counter == 10:
+        if self.data_counter == 50:
             self.data_counter = 1
             tmp_payloads = self.payloads.copy()
             t = Thread(target=self.asyn_data_push,

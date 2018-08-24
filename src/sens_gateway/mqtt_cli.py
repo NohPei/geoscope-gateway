@@ -40,22 +40,24 @@ class mqtt_cli:
         self.timer = date_time()
 
     def asyn_data_push(self, payloads):
-        path = f"data/Mixed pen/{self.timer.date}/{self.MQTT_CLIENT_ID}"
-        path_w_filename = f"{path}/{self.timer.time}.json"
+        folder_name = self.timer.date
+        file_name = self.timer.time
+        path = f"data/Mixed pen/{folder_name}/{self.MQTT_CLIENT_ID}"
+        path_w_filename = f"{path}/{file_name}.json"
         # Create file directory
         os.makedirs(path, exist_ok=True)
         # Create json file
         with open(path_w_filename, 'w') as out_file:
             json.dump(payloads, out_file)
-        print(f"> Created file: {self.timer.time}.json")
+        print(f"> Created file: {file_name}.json")
 
         file_mng = file_manager(
             root_folder_name="Mixed pen", sensor_name=self.MQTT_CLIENT_ID)
 
-        file_mng.create_date_folder(self.timer.date)
+        file_mng.create_date_folder(folder_namee)
         file_mng.set_sensor_name(self.MQTT_CLIENT_ID)
         file_mng.push_data(
-            payloads=payloads, file_name=self.timer.time, date=self.timer.date)
+            payloads=payloads, file_name=file_name, date=folder_name)
 
     def on_message(self, client, userdata, message):
         self.timer.now()
