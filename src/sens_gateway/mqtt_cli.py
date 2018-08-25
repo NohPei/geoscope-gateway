@@ -74,10 +74,8 @@ class mqtt_cli:
 
         upTim = time.time() - self.START_TIME
         ttopic = message.topic
-        data = message.payload.decode("utf-8")
-        json_data = {}
         try:
-            json_data = json.loads(data)
+            sensor_data = json.loads(message.payload.decode("utf-8"))
             sensor_data['ts'] = self.timer.timestamp
             sensor_data['timestamp'] = self.timer.timestamp
             self.payloads.append(sensor_data)
