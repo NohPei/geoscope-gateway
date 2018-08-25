@@ -74,13 +74,19 @@ class mqtt_cli:
 
         upTim = time.time() - self.START_TIME
         ttopic = message.topic
-        sensor_data = json.loads(str(message.payload.decode("utf-8")))
-        sensor_data['ts'] = self.timer.timestamp
-        sensor_data['timestamp'] = self.timer.timestamp
-        self.payloads.append(sensor_data)
-        print("On message Timestamp: {}\tTopic: {}\tcouter:{}\tUptime: {:.3f}".format(
-            self.timer.date, ttopic, self.counter, upTim))
-        self.counter = self.counter + 1
+        data = message.payload.decode("utf-8")
+        json_data = {}
+        try:
+            json_data = json.loads(data)
+            sensor_data['ts'] = self.timer.timestamp
+            sensor_data['timestamp'] = self.timer.timestamp
+            self.payloads.append(sensor_data)
+            print("On message Timestamp: {}\tTopic: {}\tcouter:{}\tUptime: {:.3f}".format(
+                self.timer.date, ttopic, self.counter, upTim))
+            self.counter = self.counter + 1
+        except:
+            if self.data_counter > 1:
+                self.data_counter = self.data_counter - 1
 
     def start(self):
         try:
