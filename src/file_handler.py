@@ -78,12 +78,12 @@ class file_manager:
         path = f"data/{self.metadata['root_folder_name']}/{date}/{self.metadata['sensor_folder_name']}"
         path_w_filename = f"{path}/{file_name}.json"
 
-        # Create file directory
-        os.makedirs(path, exist_ok=True)
-        # Create json file
-        with open(f"{path}/{file_name}.json", 'w') as out_file:
-            json.dump(payloads, out_file)
-        print(f"> Created file: {file_name}.json")
+        # # Create file directory
+        # os.makedirs(path, exist_ok=True)
+        # # Create json file
+        # with open(f"{path}/{file_name}.json", 'w') as out_file:
+        #     json.dump(payloads, out_file)
+        # print(f"> Created file: {file_name}.json")
 
         # Upload file
         [is_valid, status] = self.google_drive_service.upload_file(
