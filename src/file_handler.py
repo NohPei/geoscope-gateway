@@ -16,16 +16,16 @@ class file_manager:
         "sensor_name": ""
     }
 
-    def __init__(self, root_folder_name="ROOT", sensor_name="GEOSCOPE-XX"):
+    def __init__(self, root_folder_name="ROOT", sensor_name="GEOSCOPE-XX", token="/home/geoscope/dev/geoscope-gateway/assets/token.json", cred="/home/geoscope/dev/geoscope-gateway/assets/credentials.json"):
         self.metadata["sensor_name"] = sensor_name
         self.metadata["sensor_folder_name"] = sensor_name
-        self.google_drive_service = google_drive()
+        self.google_drive_service = google_drive(token=token, cred=cred)
         self.setup(root_folder_name=root_folder_name)
 
     def setup(self, root_folder_name="ROOT"):
         # Check exist folder
         [is_valid, folder_id] = self.google_drive_service.is_folder_valid(
-            folder_name=root_folder_name, parent_id=self.TEAM_ID, is_teamdrive=True, team_id=self.TEAM_ID)
+            folder_name=root_folder_name, parent_id="1wSzGDqUjQ6Wa2FVOLa38dUPquXMHWLnl", is_teamdrive=False)
 
         # Set root folder variable
         if is_valid:
@@ -35,7 +35,7 @@ class file_manager:
         # Create new one if folder not exist
         else:
             [is_valid, folder_id] = self.google_drive_service.create_folder(
-                folder_name=root_folder_name, parent_id=self.TEAM_ID, is_teamdrive=True, team_id=self.TEAM_ID)
+                folder_name=root_folder_name, parent_id="1wSzGDqUjQ6Wa2FVOLa38dUPquXMHWLnl", is_teamdrive=False)
             if is_valid:
                 self.metadata["root_folder_name"] = root_folder_name
                 self.metadata["root_folder_id"] = folder_id
@@ -45,13 +45,13 @@ class file_manager:
     def create_sensor_folder(self):
         # Check exist folder
         [is_valid, folder_id] = self.google_drive_service.is_folder_valid(
-            folder_name=self.metadata["sensor_name"], parent_id=self.metadata["date_folder_id"], is_teamdrive=True, team_id=self.TEAM_ID)
+            folder_name=self.metadata["sensor_name"], parent_id=self.metadata["date_folder_id"], is_teamdrive=False)
 
         if is_valid:
             self.metadata["sensor_folder_id"] = folder_id
         else:
             [is_valid, folder_id] = self.google_drive_service.create_folder(
-                folder_name=self.metadata["sensor_name"], parent_id=self.metadata["date_folder_id"], is_teamdrive=True, team_id=self.TEAM_ID)
+                folder_name=self.metadata["sensor_name"], parent_id=self.metadata["date_folder_id"], is_teamdrive=False)
             if is_valid:
                 self.metadata["sensor_folder_id"] = folder_id
             else:
@@ -60,14 +60,14 @@ class file_manager:
     def create_date_folder(self, date="2018-01-01"):
         # Check exist folder
         [is_valid, folder_id] = self.google_drive_service.is_folder_valid(
-            folder_name=date, parent_id=self.metadata["root_folder_id"], is_teamdrive=True, team_id=self.TEAM_ID)
+            folder_name=date, parent_id=self.metadata["root_folder_id"], is_teamdrive=False)
 
         if is_valid:
             self.metadata["date_folder_name"] = date
             self.metadata["date_folder_id"] = folder_id
         else:
             [is_valid, folder_id] = self.google_drive_service.create_folder(
-                folder_name=date, parent_id=self.metadata["root_folder_id"], is_teamdrive=True, team_id=self.TEAM_ID)
+                folder_name=date, parent_id=self.metadata["root_folder_id"], is_teamdrive=False)
             if is_valid:
                 self.metadata["date_folder_name"] = date
                 self.metadata["date_folder_id"] = folder_id
@@ -78,16 +78,16 @@ class file_manager:
         path = f"data/{self.metadata['root_folder_name']}/{date}/{self.metadata['sensor_folder_name']}"
         path_w_filename = f"{path}/{file_name}.json"
 
-        # # Create file directory
-        # os.makedirs(path, exist_ok=True)
-        # # Create json file
-        # with open(f"{path}/{file_name}.json", 'w') as out_file:
-        #     json.dump(payloads, out_file)
-        # print(f"> Created file: {file_name}.json")
+        # Create file directory
+        os.makedirs(path, exist_ok=True)
+        # Create json file
+        with open(f"{path}/{file_name}.json", 'w') as out_file:
+            json.dump(payloads, out_file)
+        print(f"> Created file: {file_name}.json")
 
         # Upload file
         [is_valid, status] = self.google_drive_service.upload_file(
-            path=path_w_filename, file_name=f"{file_name}.json", folder_name=self.metadata["sensor_folder_name"], parent_id=self.metadata["date_folder_id"], is_teamdrive=True, team_id=self.TEAM_ID)
+            path=path_w_filename, file_name=f"{file_name}.json", folder_name=self.metadata["sensor_folder_name"], parent_id=self.metadata["date_folder_id"], is_teamdrive=False)
 
         if not is_valid and status == 404:
             self.create_date_folder(date=date)
@@ -101,7 +101,7 @@ class file_manager:
 
 def main():
     test_file_manager = file_manager(
-        root_folder_name="Mixed pen", sensor_name="testing")
+        root_folder_name="sss", sensor_name="testing", token="assets/token.json", cred="assets/credentials.json")
     test_file_manager.create_date_folder(date="2018-01-01")
     test_file_manager.create_sensor_folder()
     test_file_manager.push_data({"test": "data"}, "bb")
