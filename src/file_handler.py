@@ -25,7 +25,7 @@ class file_manager:
     def setup(self, root_folder_name="ROOT"):
         # Check exist folder
         [is_valid, folder_id] = self.google_drive_service.is_folder_valid(
-            folder_name=root_folder_name, parent_id="1wSzGDqUjQ6Wa2FVOLa38dUPquXMHWLnl", is_teamdrive=False)
+            folder_name=root_folder_name, parent_id="1JXe1ctL3VY74oZprjZXLHCiKcSqGg54p", is_teamdrive=False)
 
         # Set root folder variable
         if is_valid:
@@ -35,7 +35,7 @@ class file_manager:
         # Create new one if folder not exist
         else:
             [is_valid, folder_id] = self.google_drive_service.create_folder(
-                folder_name=root_folder_name, parent_id="1wSzGDqUjQ6Wa2FVOLa38dUPquXMHWLnl", is_teamdrive=False)
+                folder_name=root_folder_name, parent_id="1JXe1ctL3VY74oZprjZXLHCiKcSqGg54p", is_teamdrive=False)
             if is_valid:
                 self.metadata["root_folder_name"] = root_folder_name
                 self.metadata["root_folder_id"] = folder_id
