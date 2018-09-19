@@ -85,19 +85,19 @@ class socket_server:
         upTim = time.time() - self.START_TIME
         if not self.is_first_time:
             print(f"> GEOSCOPE UUID: {message}")
-            self.payload["uuid"] = message
             self.UUID = message
             self.is_first_time = True
             self.file_mng.set_sensor_name(message)
         else:
             self.counter = self.counter + 1
             print("On message Timestamp: {}\tcouter:{}\tUptime: {:.3f}".format(
-                self.timer.date, self.counter, upTim))
+                self.timer.time, self.counter, upTim))
             data_bytes = bytes(message)
-            self.payload["data"] = self.convert_data(data_bytes)
-            self.payload["ts"] = self.timer.timestamp
-            self.payload["timestamp"] = self.timer.timestamp
-            self.payloads.append(self.payload)
+            payload["uuid"] = self.UUID
+            payload["data"] = self.convert_data(data_bytes)
+            payload["ts"] = self.timer.timestamp
+            payload["timestamp"] = self.timer.timestamp
+            self.payloads.append(payload)
 
     def on_error(self, ws, error):
         print(error)
