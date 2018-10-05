@@ -95,6 +95,7 @@ class socket_server:
             print("On message Timestamp: {}\tcouter:{}\tUptime: {:.3f}".format(
                 self.timer.time, self.counter, upTim))
             data_bytes = bytes(message)
+            payload = {}
             payload["uuid"] = self.UUID
             payload["data"] = self.convert_data(data_bytes)
             payload["ts"] = self.timer.timestamp
