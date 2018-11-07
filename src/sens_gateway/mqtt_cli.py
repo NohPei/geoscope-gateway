@@ -18,6 +18,7 @@ import json
 from threading import Thread
 from datetimes import date_time
 from file_handler import file_manager
+import logging
 
 
 class mqtt_cli:
@@ -39,6 +40,8 @@ class mqtt_cli:
 
         self.timer = date_time()
 
+        self.logger = logging.getLogger(f"GEOSCOPE.{id}")
+
     def asyn_data_push(self, payloads):
         folder_name = self.timer.date
         file_name = self.timer.time
@@ -49,7 +52,7 @@ class mqtt_cli:
         # Create json file
         with open(path_w_filename, 'w') as out_file:
             json.dump(payloads, out_file)
-        print(f"> Created file: {file_name}.json")
+        self.logger.info(f"[{self.MQTT_CLIENT_ID}]: {file_name}.json file created")
 
         file_mng = file_manager(
             root_folder_name="Mixed pen", sensor_name=self.MQTT_CLIENT_ID)
@@ -76,11 +79,9 @@ class mqtt_cli:
         ttopic = message.topic
         try:
             sensor_data = json.loads(message.payload.decode("utf-8"))
-            sensor_data['ts'] = self.timer.timestamp
             sensor_data['timestamp'] = self.timer.timestamp
             self.payloads.append(sensor_data)
-            print("On message Timestamp: {}\tTopic: {}\tcouter:{}\tUptime: {:.3f}".format(
-                self.timer.date, ttopic, self.counter, upTim))
+            self.logger.info(f"[{self.MQTT_CLIENT_ID}]: data recieved {self.data_counter}")
             self.counter = self.counter + 1
         except:
             if self.data_counter > 1:
@@ -88,17 +89,14 @@ class mqtt_cli:
 
     def start(self):
         try:
-            print("------------------------------------------------------")
-            print("## Starting MQTT Subscibe service...")
+            self.logger.info(f"[{self.MQTT_CLIENT_ID}]: Starting MQTT Subscibe service...")
             mqtt_client = mqtt.Client(self.MQTT_CLIENT_ID)
             mqtt_client.on_message = self.on_message
             mqtt_client.connect(host=self.BROKER_IP, port=self.BROKER_PORT)
             mqtt_client.subscribe(self.MQTT_TOPIC, 0)
-            print(f"## Subscribe topic: {self.MQTT_TOPIC}")
-            print(f"## MQTT Client: {self.MQTT_CLIENT_ID}")
-            print("------------------------------------------------------")
+            self.logger.info(f"[{self.MQTT_CLIENT_ID}]: Subscribe topic: {self.MQTT_TOPIC}")
+            self.logger.info(f"[{self.MQTT_CLIENT_ID}]: MQTT Client: {self.MQTT_CLIENT_ID}")
             mqtt_client.loop_forever()
         except KeyboardInterrupt:
-            print("------------------------------------------------------")
-            print("## Exit program...")
+            self.logger.info(f"[{self.MQTT_CLIENT_ID}]: Exit MQTT Subscibe service...")
             sys.exit(0)

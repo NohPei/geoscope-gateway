@@ -1,3 +1,0 @@
-#!/bin/bash
-
-python3.6 /home/geoscope/dev/geoscope-gateway/src/sens_gateway/geophone/geophone-1.py
