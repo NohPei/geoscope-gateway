@@ -2,7 +2,9 @@ from googleapiclient.discovery import build
 from httplib2 import Http
 from googleapiclient.http import MediaFileUpload
 from oauth2client import file, client, tools
+import logging
 
+logging.getLogger("googleapicliet.discovery_cache").setLevel(logging.CRITICAL)
 
 class google_drive:
     def __init__(self, scope="https://www.googleapis.com/auth/drive", token="/home/geoscope/dev/geoscope-gateway/assets/token.json", cred="/home/geoscope/dev/geoscope-gateway/assets/credentials.json"):
@@ -16,7 +18,7 @@ class google_drive:
             credentrial = tools.run_flow(flow, storage)
 
         # create google drive service
-        self.service = build('drive', 'v3', http=credentrial.authorize(Http()))
+        self.service = build('drive', 'v3', cache_discovery=False, http=credentrial.authorize(Http()))
 
     def is_folder_valid(self, folder_name="name", folder_id="id", parent_id="id", is_teamdrive=False, team_id="team_id"):
         query = 'mimeType="application/vnd.google-apps.folder"'

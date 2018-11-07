@@ -16,7 +16,7 @@ class file_manager:
         "sensor_name": ""
     }
 
-    def __init__(self, root_folder_name="ROOT", sensor_name="GEOSCOPE-XX", token="/home/geoscope/dev/geoscope-gateway/assets/token.json", cred="/home/geoscope/dev/geoscope-gateway/assets/credentials.json"):
+    def __init__(self, root_folder_name="ROOT", sensor_name="GEOSCOPE-XX", token="/home/debian/geoscope-gateway/assets/token.json", cred="/home/debian/geoscope-gateway/assets/credentials.json"):
         self.metadata["sensor_name"] = sensor_name
         self.metadata["sensor_folder_name"] = sensor_name
         self.google_drive_service = google_drive(token=token, cred=cred)
@@ -74,16 +74,9 @@ class file_manager:
             else:
                 print("> Cannot create Date folder.")
 
-    def push_data(self, payloads=[], file_name="NAME", date="2018-01-01"):
+    def push_data(self, file_name="NAME", date="2018-01-01"):
         path = f"data/{self.metadata['root_folder_name']}/{date}/{self.metadata['sensor_folder_name']}"
         path_w_filename = f"{path}/{file_name}.json"
-
-        # # Create file directory
-        # os.makedirs(path, exist_ok=True)
-        # # Create json file
-        # with open(f"{path}/{file_name}.json", 'w') as out_file:
-        #     json.dump(payloads, out_file)
-        # print(f"> Created file: {file_name}.json")
 
         # Upload file
         [is_valid, status] = self.google_drive_service.upload_file(
@@ -92,7 +85,7 @@ class file_manager:
         if not is_valid and status == 404:
             self.create_date_folder(date=date)
             self.create_sensor_folder()
-            self.push_data(payloads, file_name, date)
+            self.push_data(file_name, date)
 
     def set_sensor_name(self, sensor_name):
         self.metadata["sensor_name"] = sensor_name

@@ -15,11 +15,14 @@ import os
 import paho.mqtt.client as mqtt
 import time
 import json
-from threading import Thread
+from threading import Thread, Lock
 from datetimes import date_time
 from file_handler import file_manager
 import logging
 
+logging.getLogger('googleapicliet.discovery_cache').setLevel(logging.ERROR)
+
+global_lock = Lock()
 
 class mqtt_cli:
     BROKER_IP = "0.0.0.0"
@@ -43,6 +46,12 @@ class mqtt_cli:
         self.logger = logging.getLogger(f"GEOSCOPE.{id}")
 
     def asyn_data_push(self, payloads):
+        global global_lock
+        while global_lock.locked():
+            continue
+
+        global_lock.acquire()
+
         folder_name = self.timer.date
         file_name = self.timer.time
         path = f"data/Mixed pen/{folder_name}/{self.MQTT_CLIENT_ID}"
@@ -52,6 +61,7 @@ class mqtt_cli:
         # Create json file
         with open(path_w_filename, 'w') as out_file:
             json.dump(payloads, out_file)
+            out_file.close()
         self.logger.info(f"[{self.MQTT_CLIENT_ID}]: {file_name}.json file created")
 
         file_mng = file_manager(
@@ -59,8 +69,9 @@ class mqtt_cli:
 
         file_mng.create_date_folder(folder_name)
         file_mng.set_sensor_name(self.MQTT_CLIENT_ID)
-        file_mng.push_data(
-            payloads=payloads, file_name=file_name, date=folder_name)
+        file_mng.push_data(file_name=file_name, date=folder_name)
+
+        global_lock.release()
 
     def on_message(self, client, userdata, message):
         self.timer.now()
@@ -77,15 +88,11 @@ class mqtt_cli:
 
         upTim = time.time() - self.START_TIME
         ttopic = message.topic
-        try:
-            sensor_data = json.loads(message.payload.decode("utf-8"))
-            sensor_data['timestamp'] = self.timer.timestamp
-            self.payloads.append(sensor_data)
-            self.logger.info(f"[{self.MQTT_CLIENT_ID}]: data recieved {self.data_counter}")
-            self.counter = self.counter + 1
-        except:
-            if self.data_counter > 1:
-                self.data_counter = self.data_counter - 1
+        sensor_data = json.loads(message.payload.decode("utf-8"))
+        sensor_data['timestamp'] = self.timer.timestamp
+        self.payloads.append(sensor_data)
+        # self.logger.info(f"[{self.MQTT_CLIENT_ID}]: data recieved {self.counter}")
+        self.counter = self.counter + 1
 
     def start(self):
         try:
