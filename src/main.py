@@ -8,10 +8,12 @@ import logging
 
 logger = logging.getLogger("GEOSCOPE")
 logger.setLevel(logging.DEBUG)
-file_log_handler = logging.FileHandler(f"GEOSCOPE-{time.strftime('%Y-%m-%dT%H-%M-%S')}.log")
+file_log_handler = logging.FileHandler(
+    f"/media/hdd/log/GEOSCOPE-{time.strftime('%Y-%m-%d')}.log"
+)
 file_log_handler.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter(fmt="%(asctime)s %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p")
+formatter = logging.Formatter(fmt="%(asctime)s %(message)s", datefmt="%Y/%m/%d %I:%M:%S %p")
 file_log_handler.setFormatter(formatter)
 
 logger.addHandler(file_log_handler)

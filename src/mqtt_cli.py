@@ -21,7 +21,6 @@ class mqtt_cli:
         self.timer = date_time()
         self.id_list = id_list
         self.logger = logging.getLogger(f"GEOSCOPE.MQTT_CLIENT")
-        self.file_mng = file_manager(root_folder_name="Mixed pen")
 
     def async_push(self, client_id, payload):
         global global_lock
@@ -32,7 +31,7 @@ class mqtt_cli:
 
         folder_name = self.timer.date
         file_name = self.timer.time
-        path = f"data/Mixed pen/{folder_name}/{client_id}"
+        path = f"/media/hdd/data/Mixed pen/{folder_name}/{client_id}"
         path_w_filename = f"{path}/{file_name}.json"
         # Create file directory
         os.makedirs(path, exist_ok=True)
@@ -41,21 +40,24 @@ class mqtt_cli:
             json.dump(payload, out_file)
             out_file.close()
         self.logger.info(f"[{client_id}]: {file_name}.json file created")
-        self.logger.info(f"[{client_id}]: Starting upload data...")
+        # self.logger.info(f"[{client_id}]: Starting upload data...")
 
-        cli_id = client_id
-
-        self.file_mng.create_date_folder(folder_name)
-        self.file_mng.set_sensor_name(cli_id)
-        self.file_mng.push_data(file_name=file_name, date=folder_name)
-
-        self.logger.info(f"[{client_id}]: Finish upload data")
+        # cli_id = client_id
+        # try:
+        #     file_mng = file_manager(root_folder_name="Mixed pen")
+        #     file_mng.create_date_folder(folder_name)
+        #     file_mng.set_sensor_name(cli_id)
+        #     file_mng.push_data(file_name=file_name, date=folder_name)
+        #     self.logger.info(f"[{client_id}]: Finish upload data.")
+        # except:
+        #     self.logger.warning(f"[{client_id}]: Upload data failed.")
+        # finally:
         global_lock.release()
 
     def on_message(self, client, userdata, message):
         self.timer.now()
         cli_id = message.topic.replace("geoscope/node1/", "")
-        if self.counter[cli_id] == 200:
+        if self.counter[cli_id] == 100:
             # push
             payload = self.payloads[cli_id]
             client_id = f"GEOSCOPE_SENSOR_{cli_id}"
@@ -77,7 +79,7 @@ class mqtt_cli:
             mqtt_client.on_message = self.on_message
             mqtt_client.connect(host=self.BROKER_IP, port=self.BROKER_PORT)
             for cli_id in self.id_list:
-                client_id = f"[GEOSCOPE_SENSOR_{cli_id}]"
+                client_id = f"GEOSCOPE_SENSOR_{cli_id}"
                 topic = f"geoscope/node1/{str(cli_id)}"
                 mqtt_client.subscribe(topic, 0)
                 self.logger.info(f"[{client_id}]: Subscribed")
