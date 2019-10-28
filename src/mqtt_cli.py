@@ -31,7 +31,7 @@ class mqtt_cli:
 
         folder_name = self.timer.date
         file_name = self.timer.time
-        path = f"/media/hdd/data/Mixed pen/{folder_name}/{client_id}"
+        path = f"/media/hdd/data/{folder_name}/{client_id}"
         path_w_filename = f"{path}/{file_name}.json"
         # Create file directory
         os.makedirs(path, exist_ok=True)
@@ -57,6 +57,13 @@ class mqtt_cli:
     def on_message(self, client, userdata, message):
         self.timer.now()
         cli_id = message.topic.replace("geoscope/node1/", "")
+
+        sensor_data = json.loads(message.payload.decode("utf-8"))
+        sensor_data["timestamp"] = self.timer.timestamp
+        self.payloads[cli_id].append(sensor_data)
+        # self.logger.info(f"[GEOSCOPE_SENSOR_{cli_id}]: data recieved {self.counter[cli_id]}")
+        self.counter[cli_id] = self.counter[cli_id] + 1
+
         if self.counter[cli_id] == 100:
             # push
             payload = self.payloads[cli_id]
@@ -66,18 +73,14 @@ class mqtt_cli:
             self.payloads[cli_id] = []
             self.counter[cli_id] = 0
 
-        sensor_data = json.loads(message.payload.decode("utf-8"))
-        sensor_data["timestamp"] = self.timer.timestamp
-        self.payloads[cli_id].append(sensor_data)
-        # self.logger.info(f"[GEOSCOPE_SENSOR_{cli_id}]: data recieved {self.counter[cli_id]}")
-        self.counter[cli_id] = self.counter[cli_id] + 1
-
     def start(self):
         try:
             self.logger.info(f"Starting MQTT Subscibe service...")
             mqtt_client = mqtt.Client("GEOSCOPE_Subsciber")
             mqtt_client.on_message = self.on_message
-            mqtt_client.connect(host=self.BROKER_IP, port=self.BROKER_PORT)
+            mqtt_client.connect(
+                host=self.BROKER_IP, port=self.BROKER_PORT, keepalive=300
+            )
             for cli_id in self.id_list:
                 client_id = f"GEOSCOPE_SENSOR_{cli_id}"
                 topic = f"geoscope/node1/{str(cli_id)}"

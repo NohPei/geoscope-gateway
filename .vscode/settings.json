@@ -1,7 +1,10 @@
 {
-    "python.pythonPath": "C:\\ProgramData\\Anaconda3\\envs\\gatewayvenv3\\python.exe",
+    "python.pythonPath": "C:\\Users\\liurln\\Anaconda3\\envs\\geoscope-gateway\\python.exe",
     "python.linting.flake8Args": [
         "--ignode=E402"
     ],
-    "files.eol": "\n"
+    "files.eol": "\n",
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.enabled": true
 }
