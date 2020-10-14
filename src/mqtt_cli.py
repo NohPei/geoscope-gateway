@@ -15,7 +15,7 @@ class mqtt_cli:
     counter = {}
     payloads = {}
 
-    def __init__(self, id_list, ip="192.168.60.60", port=18884):
+    def __init__(self, id_list, ip="127.0.0.1", port=18884):
         self.BROKER_IP = ip
         self.BROKER_PORT = port
         self.timer = date_time()

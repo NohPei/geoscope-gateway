@@ -35,7 +35,7 @@ class mqtt_cli:
     data_counter = 0
     payloads = []
 
-    def __init__(self, ip="192.168.60.60", port=18884, id="GEOSCOPE", topic="TOPIC"):
+    def __init__(self, ip="127.0.0.1", port=18884, id="GEOSCOPE", topic="TOPIC"):
         self.BROKER_IP = ip
         self.BROKER_PORT = port
         self.MQTT_CLIENT_ID = id

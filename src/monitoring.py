@@ -19,7 +19,7 @@ console_log_handler.setFormatter(formatter)
 logger.addHandler(file_log_handler)
 logger.addHandler(console_log_handler)
 
-BROKER_IP = "192.168.60.60"
+BROKER_IP = "127.0.0.1" # use local MQTT Broker
 BROKER_PORT = 18884
 
 
