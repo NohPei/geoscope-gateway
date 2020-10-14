@@ -1,0 +1,10 @@
+[Unit]
+Description=Data Upload Timer
+
+[Timer]
+OnBootSec=1h
+RandomizedDelaySec=2h
+OnUnitActiveSec=1d
+
+[Install]
+WantedBy=timers.target

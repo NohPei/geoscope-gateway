@@ -1,0 +1,12 @@
+[Unit]
+Description=Upload Geophone Data with Rclone
+Documentation=https://rclone.org/commands/rclone_serve_webdav/
+After=local-fs.target network-online.target
+
+[Service]
+Type=oneshot
+
+ExecStart=/usr/bin/rclone sync /media/hdd/ %i:PigNet/ -v
+
+[Install]
+WantedBy=default.target
