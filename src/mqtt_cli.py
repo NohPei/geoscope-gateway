@@ -5,7 +5,6 @@ import json
 import paho.mqtt.client as mqtt
 from threading import Thread, Lock
 from datetimes import date_time
-from file_handler import file_manager
 import logging
 
 global_lock = Lock()
@@ -40,18 +39,6 @@ class mqtt_cli:
             json.dump(payload, out_file)
             out_file.close()
         self.logger.info(f"[{client_id}]: {file_name}.json file created")
-        # self.logger.info(f"[{client_id}]: Starting upload data...")
-
-        # cli_id = client_id
-        # try:
-        #     file_mng = file_manager(root_folder_name="Mixed pen")
-        #     file_mng.create_date_folder(folder_name)
-        #     file_mng.set_sensor_name(cli_id)
-        #     file_mng.push_data(file_name=file_name, date=folder_name)
-        #     self.logger.info(f"[{client_id}]: Finish upload data.")
-        # except:
-        #     self.logger.warning(f"[{client_id}]: Upload data failed.")
-        # finally:
         global_lock.release()
 
     def on_message(self, client, userdata, message):
