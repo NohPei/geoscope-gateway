@@ -1,6 +1,6 @@
 [Unit]
 Description=Mosquitto MQTT Broker daemon configured for PigNet
-Requires=network-online.target
+After=network-online.target
 
 [Service]
 Type=forking
