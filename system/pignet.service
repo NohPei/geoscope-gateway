@@ -1,9 +1,11 @@
 [Unit]
 Description=PigNet MQTT Broker Service
 Requires=mqtt-pignet.service
+PartOf=mqtt-pignet.service
 
 [Service]
 Type=simple
+Restart=always
 ExecStart=/home/lab/bin/pignet.sh
 
 [Install]
