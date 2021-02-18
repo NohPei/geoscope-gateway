@@ -1,6 +1,6 @@
 [Unit]
 Description=PigNet MQTT Broker Service
-After=mosquitto.service
+Requires=mqtt-pignet.service
 
 [Service]
 Type=simple

@@ -1,0 +1,13 @@
+[Unit]
+Description=Mosquitto MQTT Broker daemon configured for PigNet
+Requires=network-online.target
+
+[Service]
+Type=forking
+PIDFile=/tmp/mqtt-pignet.pid
+ExecStart=/home/lab/bin/mqtt-pignet.sh
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
