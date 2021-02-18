@@ -1,0 +1,8 @@
+[Unit]
+Description=PigNet Log Checking
+Requires=pignet.service
+
+[Service]
+Type=oneshot
+ExecStart=/home/lab/bin/logcheck-pignet.service
+

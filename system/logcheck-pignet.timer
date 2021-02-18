@@ -1,0 +1,10 @@
+[Unit]
+Description=PigNet Log Verify Timer
+
+[Timer]
+OnBootSec=1h
+RandomizedDelaySec=1h
+OnUnitActiveSec=6h
+
+[Install]
+WantedBy=timers.target
