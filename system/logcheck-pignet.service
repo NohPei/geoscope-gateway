@@ -4,5 +4,5 @@ Requires=pignet.service
 
 [Service]
 Type=oneshot
-ExecStart=/home/lab/bin/logcheck-pignet.service
+ExecStart=/home/lab/bin/logcheck-pignet.sh
 

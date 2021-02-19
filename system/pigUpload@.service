@@ -6,7 +6,7 @@ After=local-fs.target network-online.target
 [Service]
 Type=oneshot
 
-ExecStart=/usr/bin/rclone sync /media/hdd/ %i:PigNet/ -v
+ExecStart=/usr/bin/rclone sync /media/hdd/ %i:PigNet/ -v --local-no-check-updated
 
 [Install]
 WantedBy=default.target

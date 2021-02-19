@@ -2,4 +2,4 @@
 
 BASEDIR="$(dirname "`realpath "$0"`")"
 
-mosquitto -c $BASEDIR/mosquitto.conf -d
+exec mosquitto -c $BASEDIR/mosquitto.conf

@@ -3,7 +3,7 @@ Description=Mosquitto MQTT Broker daemon configured for PigNet
 After=network-online.target
 
 [Service]
-Type=forking
+Type=simple
 PIDFile=/tmp/mqtt-pignet.pid
 ExecStart=/home/lab/bin/mqtt-pignet.sh
 ExecReload=/bin/kill -HUP $MAINPID
