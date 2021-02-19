@@ -24,9 +24,9 @@ class mqtt_cli:
 
         folder_name = self.timer.date
         file_name = self.timer.time
+        client_id = f"GEOSCOPE_SENSOR_{cli_id}"
         path = f"/media/hdd/data/{folder_name}/{client_id}"
         path_w_filename = f"{path}/{file_name}.json"
-        client_id = f"GEOSCOPE_SENSOR_{cli_id}"
 
         self.folder_lock.acquire() # this will block until the lock is available
         # Create file directory, the only operation that needs to be atomicized
