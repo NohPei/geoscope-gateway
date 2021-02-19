@@ -48,12 +48,12 @@ class mqtt_cli:
         self.payloads[cli_id].append(sensor_data)
         # self.logger.info(f"[GEOSCOPE_SENSOR_{cli_id}]: data recieved {self.counter[cli_id]}")
 
-        if len(self.payloads[cli_id]) == 60 + random.randint(-5,5):
+        if len(self.payloads[cli_id]) >= 100:
             # push
             payload = self.payloads[cli_id]
             t = Thread(target=self.async_push, args=(cli_id, payload))
             t.start()
-            self.payloads[cli_id] = []
+            self.payloads[cli_id].clear()
 
     def start(self):
         self.logger.info("Starting MQTT Subscibe service...")
