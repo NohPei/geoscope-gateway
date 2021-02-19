@@ -1,9 +1,7 @@
 import sys
 import os
-import time
 import json
 import logging
-import random
 import signal
 from threading import Thread, Lock
 import paho.mqtt.client as mqtt
@@ -12,13 +10,14 @@ from datetimes import date_time
 class mqtt_cli:
     payloads = {}
     folder_lock = Lock()
+    list_locks = {}
 
     def __init__(self, id_list, ip="127.0.0.1", port=18884):
         self.BROKER_IP = ip
         self.BROKER_PORT = port
         self.timer = date_time()
         self.id_list = id_list
-        self.logger = logging.getLogger(f"GEOSCOPE.MQTT_CLIENT")
+        self.logger = logging.getLogger("GEOSCOPE.MQTT_CLIENT")
 
     def async_push(self, cli_id, payload):
 
@@ -37,7 +36,7 @@ class mqtt_cli:
         with open(path_w_filename, "w") as out_file:
             json.dump(payload, out_file)
             out_file.close()
-        self.logger.info(f"[{client_id}]: {file_name}.json file created")
+        self.logger.info("[%s]: %s.json file created", client_id, file_name)
 
     def on_message(self, client, userdata, message):
         self.timer.now()
@@ -45,15 +44,19 @@ class mqtt_cli:
 
         sensor_data = json.loads(message.payload.decode("utf-8"))
         sensor_data["timestamp"] = self.timer.timestamp
+        self.list_locks[cli_id].acquire()
         self.payloads[cli_id].append(sensor_data)
+        self.list_locks[cli_id].release()
         # self.logger.info(f"[GEOSCOPE_SENSOR_{cli_id}]: data recieved {self.counter[cli_id]}")
 
         if len(self.payloads[cli_id]) >= 100:
             # push
+            self.list_locks[cli_id].acquire()
             payload = self.payloads[cli_id]
             t = Thread(target=self.async_push, args=(cli_id, payload))
             t.start()
-            self.payloads[cli_id].clear()
+            self.payloads[cli_id] = []
+            self.list_locks[cli_id].release()
 
     def start(self):
         self.logger.info("Starting MQTT Subscibe service...")
@@ -65,8 +68,9 @@ class mqtt_cli:
             client_id = f"GEOSCOPE_SENSOR_{cli_id}"
             topic = f"geoscope/node1/{str(cli_id)}"
             mqtt_client.subscribe(topic, 0)
-            self.logger.info(f"[{client_id}]: Subscribed")
+            self.logger.info("[%s]: Subscribed", client_id)
             self.payloads[str(cli_id)] = []
+            self.list_locks[str(cli_id)] = Lock()
 
             # set up signal handlers for clean shutdown
             signal.signal(signal.SIGTERM, self.exit)

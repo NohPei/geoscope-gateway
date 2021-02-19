@@ -1,7 +1,7 @@
 import time
 import json
-import paho.mqtt.client as mqtt
 import logging
+import paho.mqtt.client as mqtt
 
 
 logger = logging.getLogger("GEOSCOPE_MONITORING")
@@ -25,17 +25,17 @@ BROKER_PORT = 18884
 
 def on_message(client, userdata, message):
     reply_message = json.loads(message.payload.decode("utf-8"))
-    logger.info(f"[{reply_message['uuid']}]: {reply_message['data']}")
+    logger.info("[%s]: %s", reply_message['uuid'], reply_message['data'])
 
 
 def mqtt_client():
-    mqtt_client = mqtt.Client("GEOSCOPE_Monitoring")
-    mqtt_client.on_message = on_message
-    mqtt_client.connect(host=BROKER_IP, port=BROKER_PORT)
-    mqtt_client.subscribe("geoscope/reply", 0)
+    client = mqtt.Client("GEOSCOPE_Monitoring")
+    client.on_message = on_message
+    client.connect(host=BROKER_IP, port=BROKER_PORT)
+    client.subscribe("geoscope/reply", 0)
 
     logger.info("Starting MQTT Loop...")
-    mqtt_client.loop_forever()
+    client.loop_forever()
 
 
 def main():
