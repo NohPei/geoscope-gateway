@@ -2,9 +2,10 @@ import time
 import json
 import logging
 import paho.mqtt.client as mqtt
+from mqtt_cli import mqtt_cli
 
 
-logger = logging.getLogger("GEOSCOPE_MONITORING")
+logger = logging.getLogger("Monitoring")
 logger.setLevel(logging.DEBUG)
 file_log_handler = logging.FileHandler(f"/media/hdd/log/STATUS-{time.strftime('%Y-%m-%d')}.log")
 file_log_handler.setLevel(logging.DEBUG)
@@ -19,29 +20,23 @@ console_log_handler.setFormatter(formatter)
 logger.addHandler(file_log_handler)
 logger.addHandler(console_log_handler)
 
-BROKER_IP = "127.0.0.1" # use local MQTT Broker
-BROKER_PORT = 18884
-
 
 def on_message(client, userdata, message):
     reply_message = json.loads(message.payload.decode("utf-8"))
     logger.info("[%s]: %s", reply_message['uuid'], reply_message['data'])
 
 
-def mqtt_client():
-    client = mqtt.Client("GEOSCOPE_Monitoring")
-    client.on_message = on_message
-    client.connect(host=BROKER_IP, port=BROKER_PORT)
-    client.subscribe("geoscope/reply", 0)
+def monitor_geophones():
+    client = mqtt_cli([], client=mqtt.Client("GEOSCOPE_Monitoring"),
+                      logger_name="Monitoring.MQTT")
+    client.mqtt_client.on_message=on_message
+    client.connect()
+    client.mqtt_client.subscribe("geoscope/reply", 0)
 
     logger.info("Starting MQTT Loop...")
-    client.loop_forever()
-
-
-def main():
-    logger.info("## Starting program")
-    mqtt_client()
+    client.mqtt_client.loop_forever()
 
 
 if __name__ == "__main__":
-    main()
+    logger.info("## Starting program")
+    monitor_geophones()

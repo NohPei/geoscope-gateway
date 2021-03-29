@@ -1,10 +1,11 @@
-from mqtt_cli import mqtt_cli
-from threading import Thread
-
+import logging
 import time
+from multiprocessing import Process
+from mqtt_cli import mqtt_cli
+from monitoring import monitor_geophones
+
 
 ## Logging
-import logging
 
 logger = logging.getLogger("GEOSCOPE")
 logger.setLevel(logging.DEBUG)
@@ -63,12 +64,21 @@ client_id_list = [
 ]
 
 
-def main():
-    logging.info("## Starting program")
+
+def datalog():
+    logging.info("## Starting data logging program")
     mqtt_client = mqtt_cli(id_list=client_id_list)
     mqtt_client.start()
-    logging.info("## End.")
+    logging.info("## End data capture.")
 
+processes = []
 
 if __name__ == "__main__":
-    main()
+    processes.append(Process(target=datalog))
+    processes.append(Process(target=monitor_geophones))
+
+    # spawn a subprocess
+    for p in processes:
+        p.start()
+    for p in processes:
+        p.join()
