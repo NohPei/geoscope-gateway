@@ -1,0 +1,16 @@
+[Unit]
+Description=Test Network by Pinging Default Gateway
+After=network-online.target
+
+[Service]
+TimeoutStopSec=10s
+ExecStart=/usr/bin/ping -q -c1 _gateway
+Restart=on-failure
+RestartSec=10ms
+StartLimitIntervalSec=1m
+StartLimitBurst=5
+StartLimitAction=reboot
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target

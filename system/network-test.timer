@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer for Network Gateway Testing
+
+[Timer]
+# Uptime after it's first ran
+OnBootSec=15m
+OnUnitInactiveSec=20m
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=multi-user.target
