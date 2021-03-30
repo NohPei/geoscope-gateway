@@ -8,11 +8,11 @@ from monitoring import monitor_geophones
 ## Logging
 
 logger = logging.getLogger("GEOSCOPE")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 file_log_handler = logging.FileHandler(
     f"/media/hdd/log/GEOSCOPE-{time.strftime('%Y-%m-%d')}.log"
 )
-file_log_handler.setLevel(logging.DEBUG)
+file_log_handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter(
     fmt="%(asctime)s %(message)s", datefmt="%Y/%m/%d %I:%M:%S %p"

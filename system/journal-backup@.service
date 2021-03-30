@@ -1,0 +1,13 @@
+[Unit]
+Description=Backup Systemd Journal to %f
+After=local-fs.target systemd-journald.service systemd-journal-flush.service
+Before=shutdown.target reboot.target halt.target sleep.target
+RequiresMountsFor=%f
+RequiresMountsFor=/var/log/journal/
+
+
+[Service]
+Type=oneshot
+
+ExecStartPre=/usr/bin/journalctl --sync
+ExecStart=/usr/bin/rsync -auvx /var/log/journal/ %f

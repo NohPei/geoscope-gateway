@@ -1,0 +1,10 @@
+[Unit]
+Description=Schedule for System Journal Backup to %f
+
+[Timer]
+OnBootSec=10m
+OnUnitActiveSec=10m
+RandomizedDelaySec=5m
+
+[Install]
+WantedBy=timers.target
