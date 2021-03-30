@@ -5,21 +5,8 @@ import paho.mqtt.client as mqtt
 from mqtt_cli import mqtt_cli
 
 
-logger = logging.getLogger("Monitoring")
+logger = logging.getLogger("GEOSCOPE.Monitoring")
 logger.setLevel(logging.INFO)
-file_log_handler = logging.FileHandler(f"/media/hdd/log/STATUS-{time.strftime('%Y-%m-%d')}.log")
-file_log_handler.setLevel(logging.INFO)
-
-console_log_handler = logging.StreamHandler()
-console_log_handler.setLevel(logging.INFO)
-
-formatter = logging.Formatter(fmt="%(asctime)s %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p")
-file_log_handler.setFormatter(formatter)
-console_log_handler.setFormatter(formatter)
-
-logger.addHandler(file_log_handler)
-logger.addHandler(console_log_handler)
-
 
 def on_message(client, userdata, message):
     reply_message = json.loads(message.payload.decode("utf-8"))
@@ -29,7 +16,7 @@ def on_message(client, userdata, message):
 def monitor_geophones():
     logger.info("# Starting Geophone Response Monitor")
     client = mqtt_cli([], client=mqtt.Client("GEOSCOPE_Monitoring"),
-                      logger_name="Monitoring.MQTT")
+                      logger_name=logger.name)
     client.mqtt_client.on_message=on_message
     client.connect()
     client.mqtt_client.subscribe("geoscope/reply", 0)

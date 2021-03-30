@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 import time
 from multiprocessing import Process
 from mqtt_cli import mqtt_cli
@@ -9,13 +10,13 @@ from monitoring import monitor_geophones
 
 logger = logging.getLogger("GEOSCOPE")
 logger.setLevel(logging.INFO)
-file_log_handler = logging.FileHandler(
-    f"/media/hdd/log/GEOSCOPE-{time.strftime('%Y-%m-%d')}.log"
-)
+file_log_handler = logging.handlers.TimedRotatingFileHandler(
+    f"/media/hdd/log/GEOSCOPE-{time.strftime('%Y-%m-%d')}.log",
+    when='midnight', delay=True)
 file_log_handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter(
-    fmt="%(asctime)s %(message)s", datefmt="%Y/%m/%d %I:%M:%S %p"
+    fmt="%(asctime)s %(levelname)s:%(name)s %(message)s", datefmt="%Y/%m/%d %I:%M:%S %p"
 )
 file_log_handler.setFormatter(formatter)
 
@@ -66,19 +67,16 @@ client_id_list = [
 
 
 def datalog():
-    logging.info("## Starting data logging program")
-    mqtt_client = mqtt_cli(id_list=client_id_list)
-    mqtt_client.start()
-    logging.info("## End data capture.")
+    sublog = logging.getLogger("GEOSCOPE.Subscriber")
 
-processes = []
+    sublog.info("## Starting data logging program")
+    mqtt_client = mqtt_cli(id_list=client_id_list, logger_name=sublog.name)
+    mqtt_client.start()
+    sublog.info("## End data capture.")
 
 if __name__ == "__main__":
-    processes.append(Process(target=datalog))
-    processes.append(Process(target=monitor_geophones))
-
-    # spawn a subprocess
-    for p in processes:
-        p.start()
-    for p in processes:
-        p.join()
+    logger.info("## Starting full capture system")
+    monitor = Process(target=monitor_geophones)
+    monitor.start()
+    datalog()
+    monitor.join()

@@ -1,8 +1,6 @@
-import sys
 import os
 import json
 import logging
-import signal
 from threading import Thread, Lock
 import paho.mqtt.client as mqtt
 from datetimes import date_time
@@ -24,7 +22,7 @@ class mqtt_cli:
         self.mqtt_client.on_message = self.on_message
         self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_disconnect = self.on_disconnect
-        self.mqtt_client.enable_logger(logger=self.logger)
+        self.mqtt_client.enable_logger(logger=logging.getLogger(logger_name+".client"))
 
     def async_push(self, cli_id, payload):
 
@@ -40,6 +38,7 @@ class mqtt_cli:
             # Release Lock now that files are unique
             self.folder_lock.release()
         else: # if we couldn't get the lock
+            self.logger.critical("Couldn't get lock to create '%s', restarting", path)
             raise RuntimeError("Folder Creation Deadlocked")
             # crash. Most likely a thread was killed while holding the lock
             
@@ -71,6 +70,7 @@ class mqtt_cli:
             self.list_locks[cli_id].release()
 
     def on_disconnect(self, client, userdata, rc):
+        self.logger.warning("Subscriber Client Disconnected")
         if rc != 0: # for unexpected disconnects
             self.mqtt_client.reconnect()
             # try to reconnect
@@ -83,11 +83,13 @@ class mqtt_cli:
         # 0: Connection Successful
     def on_connect(self, client, userdata, flags, rc):
         if rc in self.CONNECT_RESTART_CODES: # on a server error
+            self.logger.warning("Connection Failed, Re-trying")
             self.mqtt_client.reconnect()
             # try to reconnect
         elif rc in self.CONNECT_OK_CODES:
-            return
+            self.logger.info("Subscriber Client Connected")
         else:
+            self.logger.error("Can't Connect to Broker on %s:%i", self.BROKER_IP, self.BROKER_PORT)
             raise ConnectionError(client)
 
     def connect(self):
@@ -106,19 +108,11 @@ class mqtt_cli:
             self.payloads[str(cli_id)] = []
             self.list_locks[str(cli_id)] = Lock()
 
-            # set up signal handlers for clean shutdown
-            signal.signal(signal.SIGTERM, self.exit)
-            signal.signal(signal.SIGINT, self.exit)
-            signal.signal(signal.SIGABRT, self.exit)
+        self.logger.info("Starting MQTT Loop...")
+        self.mqtt_client.loop_forever()
 
-            self.logger.info("Starting MQTT Loop...")
-        try:
-            self.mqtt_client.loop_forever()
-        except KeyboardInterrupt:
-            self.exit()
-
-    def exit(self):
-        self.logger.info("MQTT Subscribe Service Dumping In-Progress Files")
+    def __del__(self):
+        self.logger.info("Dumping In-Progress Files")
         dumping_threads = []
 
         for cli_id in self.id_list: # start a thread dumping each sensor's data
@@ -130,6 +124,4 @@ class mqtt_cli:
             for thread in dumping_threads:
                 thread.join() # wait for them all to finish
 
-
-            self.logger.info("Exit MQTT Subscibe service...")
-            sys.exit(0)
+        self.logger.info("Exit MQTT Subscibe service...")
