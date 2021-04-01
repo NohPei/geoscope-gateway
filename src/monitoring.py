@@ -16,10 +16,9 @@ def on_message(client, userdata, message):
 def monitor_geophones():
     logger.info("# Starting Geophone Response Monitor")
     client = mqtt_cli([], client=mqtt.Client("GEOSCOPE_Monitoring"),
-                      logger_name=logger.name)
+                      logger_name=logger.name, extra_topics=["geoscope/reply"])
     client.mqtt_client.on_message=on_message
     client.connect()
-    client.mqtt_client.subscribe("geoscope/reply", 0)
 
     logger.info("Starting MQTT Loop...")
     client.mqtt_client.loop_forever()

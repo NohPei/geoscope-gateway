@@ -12,11 +12,12 @@ class mqtt_cli:
 
     def __init__(self, id_list, ip="127.0.0.1", port=18884,
                  client=mqtt.Client("GEOSCOPE_Subscriber"),
-                 logger_name="GEOSCOPE.MQTT_CLIENT"):
+                 logger_name="GEOSCOPE.MQTT_CLIENT", extra_topics=[]):
         self.BROKER_IP = ip
         self.BROKER_PORT = port
         self.timer = date_time()
         self.id_list = id_list
+        self.topics = extra_topics
         self.logger = logging.getLogger(logger_name)
         self.mqtt_client = client
         self.mqtt_client.on_message = self.on_message
@@ -95,7 +96,7 @@ class mqtt_cli:
 
     def connect(self):
         self.mqtt_client.connect(host=self.BROKER_IP, port=self.BROKER_PORT,
-                                 keepalive=300)
+                                 keepalive=300, clean_session=False)
 
     def subscribe(self):
         for cli_id in self.id_list:
@@ -103,6 +104,10 @@ class mqtt_cli:
             topic = f"geoscope/node1/{str(cli_id)}"
             self.mqtt_client.subscribe(topic, 0)
             self.logger.info("[%s]: Subscribed", client_id)
+
+        for topic in self.topics:
+            self.mqtt_client.subscribe(topic, 0)
+            self.logger.info("[%s]: Subscribed", topic)
 
     def start(self):
         self.logger.info("Starting MQTT Subscibe service...")
