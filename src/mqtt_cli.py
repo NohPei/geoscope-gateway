@@ -88,6 +88,7 @@ class mqtt_cli:
             # try to reconnect
         elif rc in self.CONNECT_OK_CODES:
             self.logger.info("Subscriber Client Connected")
+            self.subscribe()
         else:
             self.logger.error("Can't Connect to Broker on %s:%i", self.BROKER_IP, self.BROKER_PORT)
             raise ConnectionError(client)
@@ -96,15 +97,18 @@ class mqtt_cli:
         self.mqtt_client.connect(host=self.BROKER_IP, port=self.BROKER_PORT,
                                  keepalive=300)
 
-
-    def start(self):
-        self.logger.info("Starting MQTT Subscibe service...")
-        self.connect()
+    def subscribe(self):
         for cli_id in self.id_list:
             client_id = f"GEOSCOPE_SENSOR_{cli_id}"
             topic = f"geoscope/node1/{str(cli_id)}"
             self.mqtt_client.subscribe(topic, 0)
             self.logger.info("[%s]: Subscribed", client_id)
+
+    def start(self):
+        self.logger.info("Starting MQTT Subscibe service...")
+        self.connect()
+
+        for cli_id in self.id_list:
             self.payloads[str(cli_id)] = []
             self.list_locks[str(cli_id)] = Lock()
 
