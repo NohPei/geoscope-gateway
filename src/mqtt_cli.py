@@ -11,7 +11,8 @@ class mqtt_cli:
     list_locks = {}
 
     def __init__(self, id_list, ip="127.0.0.1", port=18884,
-                 client=mqtt.Client("GEOSCOPE_Subscriber"),
+                 client=mqtt.Client("GEOSCOPE_Subscriber",
+                                    clean_session=False),
                  logger_name="GEOSCOPE.MQTT_CLIENT", extra_topics=[]):
         self.BROKER_IP = ip
         self.BROKER_PORT = port
@@ -96,7 +97,7 @@ class mqtt_cli:
 
     def connect(self):
         self.mqtt_client.connect(host=self.BROKER_IP, port=self.BROKER_PORT,
-                                 keepalive=300, clean_session=False)
+                                 keepalive=300)
 
     def subscribe(self):
         for cli_id in self.id_list:
