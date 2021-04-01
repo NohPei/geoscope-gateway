@@ -121,7 +121,7 @@ class mqtt_cli:
             t.start()
             dumping_threads.append(t)
 
-            for thread in dumping_threads:
-                thread.join() # wait for them all to finish
+        for thread in dumping_threads:
+            thread.join() # wait for them all to finish
 
         self.logger.info("Exit MQTT Subscibe service...")
