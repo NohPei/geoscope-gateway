@@ -6,7 +6,7 @@ SENDMAIL_OPTS=""
 
 FROM="`id -un`@`cat /etc/hostname`"
 TO="nobody@andrew.cmu.edu"
-SUBJECT="[logcheck-pignet@`cat /etc/hostname`] PigNet Error Notice"
+SUBJECT="[logcheck-pignet@`uname -n`] PigNet Error Notice"
 
 if [ ! -d "$STORAGE" ]; then
 	mail -S mta="$SENDMAIL" -S mta-arguments="$SENDMAIL_OPTS" -a "$STATUS_LOG" -s "$SUBJECT" "$TO" << EOF
