@@ -4,7 +4,7 @@ STORAGE=/media/hdd/
 SENDMAIL=/usr/bin/sendmail
 SENDMAIL_OPTS=""
 
-FROM="`id -un`@`cat /etc/hostname`"
+FROM="`id -un`@`uname -n`"
 TO="nobody@andrew.cmu.edu"
 SUBJECT="[logcheck-pignet@`uname -n`] PigNet Error Notice"
 
