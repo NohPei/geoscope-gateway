@@ -6,10 +6,10 @@ After=local-fs.target network-online.target
 [Service]
 Type=oneshot
 Environment=PIGNET_DIR="/media/hdd/"
-Environment=REMOTE="%i:PigNet/"
+Environment=REMOTE_PATH="PigNet/"
 
-ExecStartPre=/home/lab/bin/pigArchive.sh
-ExecStart=/usr/bin/rclone copy "$PIGNET_DIR" "$REMOTE" -v --local-no-check-updated --exclude 'data/*/'
+ExecStartPre=%h/bin/pigArchive.sh
+ExecStart=/usr/bin/rclone copy "$PIGNET_DIR" %i:"$REMOTE_PATH" -v --local-no-check-updated --exclude 'data/*/'
 
 [Install]
 WantedBy=default.target

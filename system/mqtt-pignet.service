@@ -5,7 +5,7 @@ After=network-online.target
 [Service]
 Type=simple
 PIDFile=/tmp/mqtt-pignet.pid
-ExecStart=/home/lab/bin/mqtt-pignet.sh
+ExecStart=%h/bin/mqtt-pignet.sh
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 

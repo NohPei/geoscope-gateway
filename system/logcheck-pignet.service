@@ -1,8 +1,9 @@
 [Unit]
 Description=PigNet Log Checking
 Requires=pignet.service
+After=chrony-wait.service
 
 [Service]
 Type=oneshot
-ExecStart=/home/lab/bin/logcheck-pignet.sh
+ExecStart=%h/bin/logcheck-pignet.sh
 

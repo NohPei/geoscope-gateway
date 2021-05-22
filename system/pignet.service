@@ -7,7 +7,7 @@ PartOf=mqtt-pignet.service
 Type=simple
 Restart=always
 TimeoutStopSec=1m
-ExecStart=/home/lab/bin/pignet.sh
+ExecStart=%h/bin/pignet.sh
 
 [Install]
 WantedBy=default.target
