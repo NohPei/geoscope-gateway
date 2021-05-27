@@ -1,6 +1,5 @@
 [Unit]
 Description=PigNet Log Checking
-Requires=pignet.service
 After=chrony-wait.service
 
 [Service]
