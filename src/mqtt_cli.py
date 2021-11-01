@@ -31,7 +31,7 @@ class mqtt_cli:
         folder_name = self.timer.date
         file_name = self.timer.time
         client_id = f"GEOSCOPE_SENSOR_{cli_id}"
-        path = f"/media/hdd/data/{folder_name}/{client_id}"
+        path = f"/mnt/hdd/PigNet/data/{folder_name}/{client_id}"
         path_w_filename = f"{path}/{file_name}.json"
 
         if (self.folder_lock.acquire(timeout=5)): #this will block until the lock is available
@@ -43,8 +43,8 @@ class mqtt_cli:
             self.logger.critical("Couldn't get lock to create '%s', restarting", path)
             raise RuntimeError("Folder Creation Deadlocked")
             # crash. Most likely a thread was killed while holding the lock
-            
-            
+
+
         # Create json file
         with open(path_w_filename, "w") as out_file:
             json.dump(payload, out_file)

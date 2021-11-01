@@ -11,7 +11,7 @@ from monitoring import monitor_geophones
 logger = logging.getLogger("GEOSCOPE")
 logger.setLevel(logging.INFO)
 file_log_handler = logging.handlers.TimedRotatingFileHandler(
-    f"/media/hdd/log/GEOSCOPE-{time.strftime('%Y-%m-%d')}.log",
+    f"/mnt/hdd/PigNet/log/GEOSCOPE-{time.strftime('%Y-%m-%d')}.log",
     when='midnight', delay=True)
 file_log_handler.setLevel(logging.INFO)
 

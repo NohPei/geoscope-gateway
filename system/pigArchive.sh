@@ -3,7 +3,7 @@
 set -e
 
 if [ -z $PIGNET_DIR ]; then
-	PIGNET_DIR="/media/hdd/"
+	PIGNET_DIR="/mnt/hdd/PigNet/"
 fi
 
 archive_folder() {

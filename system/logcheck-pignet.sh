@@ -1,15 +1,13 @@
 #!/bin/sh
 
-STORAGE=/media/hdd/
-SENDMAIL=/usr/bin/sendmail
-SENDMAIL_OPTS=""
+STORAGE=/mnt/hdd/PigNet/
 
 FROM="`id -un`@`uname -n`"
-TO="nobody@andrew.cmu.edu"
+TO="PigNetErrors@umich.edu"
 SUBJECT="[logcheck-pignet@`uname -n`] PigNet Error Notice"
 
 if [ ! -d "$STORAGE" ]; then
-	mail -S mta="$SENDMAIL" -S mta-arguments="$SENDMAIL_OPTS" -a "$STATUS_LOG" -s "$SUBJECT" "$TO" << EOF
+	mail -a "$STATUS_LOG" -s "$SUBJECT" "$TO" << EOF
 From: $FROM
 
 Storage Device is not Mounted. No data can be logged.
@@ -34,7 +32,7 @@ fi
 
 
 
-mail -S mta="$SENDMAIL" -S mta-arguments="$SENDMAIL_OPTS" -a "$DEVICE_LOG" -a "$DEVICE_LOG_LAST" -s "$SUBJECT" "$TO" << EOF
+mail -a "$DEVICE_LOG" -a "$DEVICE_LOG_LAST" -s "$SUBJECT" "$TO" << EOF
 From: $FROM
 
 Latest Geophone data is more than 6 hours old. There's probably a problem.

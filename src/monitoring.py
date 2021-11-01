@@ -12,12 +12,14 @@ def on_message(client, userdata, message):
     reply_message = json.loads(message.payload.decode("utf-8"))
     logger.info("[%s]: %s", reply_message['uuid'], reply_message['data'])
 
+log_topics = ["geosctope/reply", "$SYS/broker/log/E", "$SYS/broker/log/W"]
+
 
 def monitor_geophones():
     logger.info("# Starting Geophone Response Monitor")
     client = mqtt_cli([], client=mqtt.Client("GEOSCOPE_Monitoring",
                                              clean_session=False),
-                      logger_name=logger.name, extra_topics=["geoscope/reply"])
+                      logger_name=logger.name, extra_topics=log_topics)
     client.mqtt_client.on_message=on_message
     client.connect()
 

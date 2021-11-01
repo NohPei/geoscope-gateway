@@ -1,6 +1,7 @@
 [Unit]
 Description=PigNet MQTT Broker Service
 Requires=mqtt-pignet.service
+After=mqtt-pignet.service
 PartOf=mqtt-pignet.service
 
 [Service]
