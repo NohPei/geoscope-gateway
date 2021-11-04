@@ -12,7 +12,7 @@ def on_message(client, userdata, message):
     reply_message = json.loads(message.payload.decode("utf-8"))
     logger.info("[%s]: %s", reply_message['uuid'], reply_message['data'])
 
-log_topics = ["geosctope/reply", "$SYS/broker/log/E", "$SYS/broker/log/W"]
+log_topics = ["geoscope/reply", "$SYS/broker/log/#"]
 
 
 def monitor_geophones():
