@@ -12,7 +12,7 @@ class mqtt_cli:
 
     def __init__(self, id_list, ip="127.0.0.1", port=18884,
                  client=mqtt.Client("GEOSCOPE_Subscriber",
-                                    clean_session=True),
+                                    clean_session=False),
                  logger_name="GEOSCOPE.MQTT_CLIENT", extra_topics=[]):
         self.BROKER_IP = ip
         self.BROKER_PORT = port
@@ -55,7 +55,7 @@ class mqtt_cli:
         self.timer.now()
         cli_id = message.topic.replace("geoscope/node1/", "")
 
-        sensor_data = json.loads(str(message.payload))
+        sensor_data = json.loads(message.payload.decode("utf-8"))
         sensor_data["timestamp"] = self.timer.timestamp
         self.list_locks[cli_id].acquire()
         self.payloads[cli_id].append(sensor_data)
