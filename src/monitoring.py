@@ -9,10 +9,13 @@ logger = logging.getLogger("GEOSCOPE.Monitoring")
 logger.setLevel(logging.INFO)
 
 def on_message(client, userdata, message):
-    reply_message = json.loads(message.payload.decode("utf-8"))
-    logger.info("[%s]: %s", reply_message['uuid'], reply_message['data'])
+    try:
+        reply_message = json.loads(str(message.payload))
+        logger.info("[%s]: %s", reply_message['uuid'], reply_message['data'])
+    except json.decoder.JSONDecodeError:
+        logger.error("Invalid JSON Packet: \n-----\n%s\n-----\n", str(message.payload));
 
-log_topics = ["geosctope/reply", "$SYS/broker/log/E", "$SYS/broker/log/W"]
+log_topics = ["geoscope/reply", "$SYS/broker/log/E", "$SYS/broker/log/W"]
 
 
 def monitor_geophones():

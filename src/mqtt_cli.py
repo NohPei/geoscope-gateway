@@ -55,7 +55,11 @@ class mqtt_cli:
         self.timer.now()
         cli_id = message.topic.replace("geoscope/node1/", "")
 
-        sensor_data = json.loads(message.payload.decode("utf-8"))
+        try:
+            sensor_data = json.loads(message.payload.decode("utf-8"))
+        except json.decoder.JSONDecodeError:
+            logger.error("Invalid JSON Packet: \n-----\n%s\n-----\n", str(message.payload));
+            return
         sensor_data["timestamp"] = self.timer.timestamp
         self.list_locks[cli_id].acquire()
         self.payloads[cli_id].append(sensor_data)
