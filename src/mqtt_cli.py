@@ -58,7 +58,7 @@ class mqtt_cli:
         try:
             sensor_data = json.loads(message.payload.decode("utf-8"))
         except json.decoder.JSONDecodeError:
-            logger.error("Invalid JSON Packet: \n-----\n%s\n-----\n", str(message.payload));
+            self.logger.error("Invalid JSON Packet: \n-----\n%s\n-----\n", str(message.payload));
             return
         sensor_data["timestamp"] = self.timer.timestamp
         self.list_locks[cli_id].acquire()
