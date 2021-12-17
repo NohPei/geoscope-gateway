@@ -7,7 +7,6 @@ import paho.mqtt.client as mqtt
 
 class mqtt_cli:
     payloads = {}
-    folder_lock = Lock()
     list_locks = {}
 
     def __init__(self, id_list, ip="127.0.0.1", port=18884,
@@ -32,15 +31,7 @@ class mqtt_cli:
         client_id = f"GEOSCOPE_SENSOR_{cli_id}"
         path = f"/mnt/hdd/PigNet/data/{folder_name}/{client_id}"
 
-        if (self.folder_lock.acquire(timeout=5)): #this will block until the lock is available
-            # Create file directory, the only operation that needs to be atomicized
-            os.makedirs(path, exist_ok=True)
-            # Release Lock now that files are unique
-            self.folder_lock.release()
-        else: # if we couldn't get the lock
-            self.logger.critical("Couldn't get lock to create '%s', restarting", path)
-            raise RuntimeError("Folder Creation Deadlocked")
-            # crash. Most likely a thread was killed while holding the lock
+        os.makedirs(path, exist_ok=True)
 
 
         # Create json file
@@ -79,12 +70,10 @@ class mqtt_cli:
             self.mqtt_client.reconnect()
             # try to reconnect
 
-    CONNECT_RESTART_CODES = {2,3,5}
-        # 2: invalid client ID
-        # 3: server unavailable
-        # 5: not authorized
-    CONNECT_OK_CODES = {0}
-        # 0: Connection Successful
+    CONNECT_RESTART_CODES = {mqtt.CONNACK_REFUSED_IDENTIFIER_REJECTED,
+                             mqtt.CONNACK_REFUSED_SERVER_UNAVAILABLE,
+                             mqtt.CONNACK_REFUSED_NOT_AUTHORIZED}
+    CONNECT_OK_CODES = {mqtt.CONNACK_ACCEPTED}
     def on_connect(self, client, userdata, flags, rc):
         if rc in self.CONNECT_RESTART_CODES: # on a server error
             self.logger.warning("Connection Failed, Re-trying")
@@ -102,15 +91,15 @@ class mqtt_cli:
                                  keepalive=300)
 
     def subscribe(self):
+        node_topics = [ (f"geocope/node1/{str(cli_id)}", 0) for cli_id in self.id_list ]
+        self.mqtt_client.subscribe(node_topics)
         for cli_id in self.id_list:
-            client_id = f"GEOSCOPE_SENSOR_{cli_id}"
-            topic = f"geoscope/node1/{str(cli_id)}"
-            self.mqtt_client.subscribe(topic, 0)
-            self.logger.info("[%s]: Subscribed", client_id)
+            self.logger.info("[GEOSCOPE_SENSOR_%s]: Subscribed", cli_id)
 
+        extra_topics = [ (topic, 0) for topic in self.topics ]
+        self.mqtt_client.subscribe(extra_topics)
         for topic in self.topics:
-            self.mqtt_client.subscribe(topic, 0)
-            self.logger.info("[%s]: Subscribed", topic)
+            self.logger.info("[%s]: Extra Topic Subscribed", topic)
 
     def start(self):
         self.logger.info("Starting MQTT Subscibe service...")
