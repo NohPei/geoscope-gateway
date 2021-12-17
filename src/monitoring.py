@@ -9,20 +9,25 @@ logger = logging.getLogger("GEOSCOPE.Monitoring")
 logger.setLevel(logging.INFO)
 
 def on_message(client, userdata, message):
-    try:
-        reply_message = json.loads(str(message.payload))
-        logger.info("[%s]: %s", reply_message['uuid'], reply_message['data'])
-    except json.decoder.JSONDecodeError:
-        logger.error("Invalid JSON Packet: \n-----\n%s\n-----\n", str(message.payload));
+    if message.topic.startswith("geoscope"):
+        try:
+            reply_message = json.loads(str(message.payload))
+            logger.info("[%s]: %s", reply_message['uuid'],
+                        reply_message['data'])
+        except json.decoder.JSONDecodeError:
+            logger.error("Invalid JSON Packet on [%s]: \n-----\n%s\n-----\n",
+                         message.topic, message.payload);
+    else:
+        logger.info("[%s]: %s", message.topic, message.payload)
+
 
 log_topics = ["geoscope/reply", "$SYS/broker/log/E", "$SYS/broker/log/W"]
 
 
 def monitor_geophones():
     logger.info("# Starting Geophone Response Monitor")
-    client = mqtt_cli([], client=mqtt.Client("GEOSCOPE_Monitoring",
-                                             clean_session=False),
-                      logger_name=logger.name, extra_topics=log_topics)
+    paho_client = mqtt.Client("GEOSCOPE_Monitoring", clean_session=False)
+    client = mqtt_cli([], client=paho_client, logger_name=logger.name, extra_topics=log_topics)
     client.mqtt_client.on_message=on_message
     client.connect()
 
