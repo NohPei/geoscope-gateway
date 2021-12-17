@@ -1,9 +1,9 @@
 import os
 import json
 import logging
+from datetime import datetime
 from threading import Thread, Lock
 import paho.mqtt.client as mqtt
-from datetimes import date_time
 
 class mqtt_cli:
     payloads = {}
@@ -16,7 +16,6 @@ class mqtt_cli:
                  logger_name="GEOSCOPE.MQTT_CLIENT", extra_topics=[]):
         self.BROKER_IP = ip
         self.BROKER_PORT = port
-        self.timer = date_time()
         self.id_list = id_list
         self.topics = extra_topics
         self.logger = logging.getLogger(logger_name)
@@ -28,11 +27,10 @@ class mqtt_cli:
 
     def async_push(self, cli_id, payload):
 
-        folder_name = self.timer.date
-        file_name = self.timer.time
+        folder_name = datetime.strftime("%Y-%m-%d")
+        filename = datetime.strftime("%Y-%m-%dT%H-%M-%S")
         client_id = f"GEOSCOPE_SENSOR_{cli_id}"
         path = f"/mnt/hdd/PigNet/data/{folder_name}/{client_id}"
-        path_w_filename = f"{path}/{file_name}.json"
 
         if (self.folder_lock.acquire(timeout=5)): #this will block until the lock is available
             # Create file directory, the only operation that needs to be atomicized
@@ -46,13 +44,13 @@ class mqtt_cli:
 
 
         # Create json file
-        with open(path_w_filename, "w") as out_file:
+        with open(f"{path}/{file_name}.json", "w") as out_file:
             json.dump(payload, out_file)
             out_file.close()
         self.logger.info("[%s]: %s.json file created", client_id, file_name)
 
     def on_message(self, client, userdata, message):
-        self.timer.now()
+        timestamp = datetime.now();
         cli_id = message.topic.replace("geoscope/node1/", "")
 
         try:
@@ -60,7 +58,7 @@ class mqtt_cli:
         except json.decoder.JSONDecodeError:
             self.logger.error("Invalid JSON Packet: \n-----\n%s\n-----\n", str(message.payload));
             return
-        sensor_data["timestamp"] = self.timer.timestamp
+        sensor_data["timestamp"] = round(timestamp.timestamp()*1000)
         self.list_locks[cli_id].acquire()
         self.payloads[cli_id].append(sensor_data)
         self.list_locks[cli_id].release()
