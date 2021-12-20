@@ -1,9 +1,10 @@
 #!/bin/python
 
 import json
-import time
-from threading import Timer
-import paho.mqtt.client as mqtt
+import asyncio as aio
+from datetime import datetime
+import uvloop
+import asyncio_mqtt as mqtt
 
 payload = {}
 payload["gain"] = 100
@@ -11,77 +12,51 @@ payload["data"] = [4095 for i in range(500)]
 
 class sensor_emulator:
 
-    def __init__(self, client_id, addr="127.0.0.1", port=18884):
+    def __init__(self, client_id: str, client: mqtt.Client):
         self.id = client_id
-        self.client = mqtt.Client(f"GEOSCOPE_SENSOR_{self.id}")
-        self.client.connect(host=addr, port=port, keepalive=300)
+        self.client = client
 
+    async def repeat_send(self, interval):
+        while True:
+            await aio.sleep(interval)
+            await self.send_packet()
+
+
+    async def startup_messages(self):
         startup = {}
         startup["uuid"] = f"GEOSCOPE-{self.id}"
+        startup["sendTime"] = datetime.timestamp()
         startup["data"] = "[Device Started]"
-        self.client.publish(topic="geoscope/reply",
+        await self.client.publish(topic="geoscope/reply",
                             payload=json.dumps(startup))
 
         startup["data"] = f'[Current Gain: {payload["gain"]}'
-        self.client.publish(topic="geoscope/reply",
+        startup["sendTime"] = datetime.timestamp()
+        await self.client.publish(topic="geoscope/reply",
                             payload=json.dumps(startup))
 
-        self.timer = loopingTimer(1, self.send_packet)
-        self.start()
-
-
-    def start(self):
-        self.client.loop_start()
-        self.timer.start()
-
-
-    def stop(self):
-        self.timer.stop()
-        self.client.loop_stop()
-
-    def send_packet(self):
+    async def send_packet(self):
         toSend = payload
         toSend["uuid"] = f"GEOSCOPE-{self.id}"
-        self.client.publish(topic=f'geoscope/node1/{self.id}',
+        toSend["sendTime"] = datetime.timestamp()
+        await self.client.publish(topic=f'geoscope/node1/{self.id}',
                             payload=json.dumps(toSend))
-
-class loopingTimer():
-    def __init__(self, interval, handler):
-        self.hFunc = handler
-        self.interval = interval
-        self.thread = Timer(self.interval, self.handle_timer)
-        self.thread.daemon = True
-        self.running = False
-
-    def handle_timer(self):
-        self.hFunc()
-        if self.running:
-            self.thread = Timer(self.interval, self.handle_timer)
-            self.thread.daemon = True
-            self.thread.start()
-
-    def start(self):
-        self.running = True
-        if not self.thread.is_alive():
-            self.thread.start()
-
-    def stop(self):
-        self.running = False
-
-    def cancel(self):
-        self.stop()
-        self.thread.cancel()
 
 cli_list = [ 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34 ]
 
-def emulate(broker="PigServer-PiMARC.lan"):
-    sensors = []
-    for id in cli_list:
-        new_sensor = sensor_emulator(id, addr=broker)
-        sensors.append(new_sensor)
+async def emulate(client_list=[] , broker="PigServer-PiMARC.lan", port=18884):
+    emulators = set()
+    tasks = set()
+    async with mqtt.Client(broker, port) as client:
+        for node_id in client_list:
+            new_sensor = sensor_emulator(node_id, client)
+            emulators.add(new_sensor)
+            await new_sensor.startup_messages()
+            loop_task = aio.create_task(new_sensor.repeat_send())
+            tasks.add(loop_task)
 
-    while True:
-        time.sleep(5)
+    await aio.gather(*tasks)
 
 if __name__ == "__main__":
-    emulate()
+    uvloop.install()
+    aio.run(emulate(cli_list))
