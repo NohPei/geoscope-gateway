@@ -1,8 +1,10 @@
 import logging
-import logging.handlers
 import time
-import atexit
+import os
 import asyncio as aio
+from logging.handlers import ( QueueHandler,
+                              TimedRotatingFileHandler,
+                              QueueListener )
 from contextlib import AsyncExitStack
 from queue import SimpleQueue
 import uvloop
@@ -14,59 +16,66 @@ from sensor_logger import GeoAggregator
 
 logger = logging.getLogger("GEOSCOPE")
 logger.setLevel(logging.INFO)
-file_log_handler = logging.handlers.TimedRotatingFileHandler(
-    f"/mnt/hdd/PigNet/log/GEOSCOPE-{time.strftime('%Y-%m-%d')}.log",
-    when='midnight', delay=True)
-file_log_handler.setLevel(logging.INFO)
-
-formatter = logging.Formatter(
-    fmt="%(asctime)s %(levelname)s:%(name)s %(message)s", datefmt="%d%b%Y %H:%M:%S"
-)
-file_log_handler.setFormatter(formatter)
-
 log_queue = SimpleQueue()
-logger.addHandler(logging.handlers.QueueHandler(log_queue))
+logger.addHandler(QueueHandler(log_queue))
+log_file_base = f"GEOSCOPE-{time.strftime('%Y-%m-%d')}.log"
 
-log_writer = logging.handlers.QueueListener(log_queue, file_log_handler,
-                                            respect_handler_level=True)
-atexit.register(log_writer.stop())
-log_writer.start()
 
-async def pignet():
+LOG_TOPICS = ["$SYS/broker/log/E", "$SYS/broker/log/W"]
+JSON_LOG_TOPICS = ["geoscope/reply"]
+SENSOR_TOPIC_FILTER = "geoscope/node1/+"
+
+
+log_format = logging.Formatter( fmt="%(asctime)s %(levelname)s:%(name)s"
+                              "%(message)s", datefmt="%d%b%Y %H:%M:%S")
+
+async def pignet(root_dir="/mnt/hdd/PigNet"):
+    os.makedirs(os.path.join(root_dir, "logs"), exist_ok=True)
+    file_log_handler = TimedRotatingFileHandler(os.path.join(root_dir, "logs",
+                                                             log_file_base),
+                                                when='midnight', delay=True)
+    file_log_handler.setLevel(logging.INFO)
+    file_log_handler.setFormatter(log_format)
+
+    log_writer = QueueListener(log_queue, file_log_handler,
+                               respect_handler_level=True)
     async with AsyncExitStack as stack:
         tasks = set()
-        aggregator = GeoAggregator(storage_root="/mnt/hdd/PigNet", log_name=logger.name+".Aggregator")
+        aggregator = GeoAggregator(storage_root=root_dir, log_name=logger.name+".Aggregator")
 
-        stack.push_async_callback(aggregator.flush) # during stack unwind, flush all in-progress data last
+        log_writer.start() # start saving logs to file
+        stack.push_async_callback(aio.to_thread(log_writer.stop()))
+        # during a shutdown, flush the log buffer
 
-        client_logger = logging.getLogger(logger.name + ".Client")
+        stack.push_async_callback(aggregator.flush)
+        # during stack unwind, flush all in-progress data
 
-        client = mqtt.Client("127.0.0.1", "18884", logger=client_logger, clean_session=False)
+        client = mqtt.Client("127.0.0.1", port=18884,
+                             logger=logging.getLogger(logger.name + ".Client"),
+                             client_id=logger.name+"_Gateway",
+                             clean_session=False)
+
         await stack.enter_async_context(client)
 
-        log_topics = ["$SYS/broker/log/E", "$SYS/broker/log/W"]
-        json_log_topics = ["geoscope/reply"]
-        sensor_topic_filter = "geoscope/node1/+"
-
-        for topic in log_topics:
+        for topic in LOG_TOPICS:
             manager = client.filtered_messages(topic)
             messages = await stack.enter_async_context(manager)
             task = aio.create_task(aggregator.log_status(messages))
             tasks.add(task)
             await client.subscribe(topic)
 
-        for topic in json_log_topics:
+        for topic in JSON_LOG_TOPICS:
             manager = client.filtered_messages(topic)
             messages = await stack.enter_async_context(manager)
             task = aio.create_task(aggregator.log_json_status(messages))
             tasks.add(task)
             await client.subscribe(topic)
 
-        sensor_manager = client.filtered_messages(sensor_topic_filter)
+        sensor_manager = client.filtered_messages(SENSOR_TOPIC_FILTER)
         sensor_messages = stack.enter_async_context(sensor_manager)
         sensor_task = aio.create_task(aggregator.log_sensors(sensor_messages))
-        tasks.add(task)
-        await client.subscribe(sensor_topic_filter)
+        tasks.add(sensor_task)
+        await client.subscribe(SENSOR_TOPIC_FILTER)
 
         await aio.gather(*tasks)
 
@@ -79,7 +88,8 @@ async def maintain_mqtt(main_func):
         try:
             await main_func()
         except mqtt.MqttError as error:
-            await aio.to_thread(logger.critical,"Client Error \"%s\". Retrying in %f s.", error, reconnect_interval)
+            await aio.to_thread(logger.critical,"Client Error \"%s\". Retrying"
+                                "in %f s.", error, reconnect_interval)
         finally:
             await aio.sleep(reconnect_interval)
 

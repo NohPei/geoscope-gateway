@@ -50,7 +50,7 @@ class GeoAggregator:
                 continue
             sensor_data["timestamp"] = round(msg_time.timestamp()*1000)
 
-            if node_id not in self.payloads.keys():
+            if node_id not in self.payloads:
                 self.payloads[node_id] = []
 
             self.payloads[node_id].append(sensor_data)
@@ -65,8 +65,8 @@ class GeoAggregator:
 
 
     async def json_error_log(self, payload: str):
-            await aio.to_thread(self.logger.error,"Invalid JSON Packet:"
-                                "\n-----\n%s\n-----\n", payload)
+        await aio.to_thread(self.logger.error,"Invalid JSON Packet:"
+                            "\n-----\n%s\n-----\n", payload)
 
     async def log_json_status(self, messages):
         async for message in messages:
