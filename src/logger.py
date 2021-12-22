@@ -8,7 +8,7 @@ import aiofile as files
 
 class GeoAggregator:
     payloads = {}
-    background_tasks = set()
+    background_tasks = aio.Queue()
     save_trigger_count = {}
 
     def __init__(self, storage_root="/mnt/hdd/PigNet/", log_name="GEOSCOPE.Subscriber"):
@@ -34,15 +34,16 @@ class GeoAggregator:
                          os.path.basename(file_path))
 
 
-    async def _background_data_writer(self):
+    async def _background_manager(self, task_queue):
         while True:
-            done, pending = await aio.shield(aio.wait(self.background_tasks, return_when=aio.FIRST_COMPLETED))
-            for task in done:
-                self.background_tasks.remove(task)
+            next_task = await task_queue.get()
+            await next_task
+            task_queue.task_done()
 
 
     async def log_sensors(self, messages):
-        background_manager = aio.create_task(self._background_data_writer())
+        bg_write_tasks = aio.Queue()
+        bg_write_handler = aio.create_task(self._background_manager(bg_write_tasks))
 
         async for message in messages:
             msg_time = datetime.now()
@@ -67,15 +68,10 @@ class GeoAggregator:
                 save_this_sensor_coro = self.save_sensor_data(node_id,
                                                               self.payloads[node_id][:])
                 self.payloads[node_id].clear()
-                self.background_tasks.add(aio.create_task(save_this_sensor_coro))
+                await bg_write_tasks.put(aio.create_task(save_this_sensor_coro))
 
-        background_manager.cancel()
-        aio.gather(*self.background_tasks)
-        self.background_tasks.clear()
-
-
-
-
+        await bg_write_tasks.join()
+        bg_write_handler.cancel()
 
     async def json_error_log(self, payload: str):
         self.logger.error("Invalid JSON Packet:" "\n-----\n%s\n-----\n",
@@ -97,7 +93,10 @@ class GeoAggregator:
 
     async def flush(self):
         self.logger.info("Dumping In-Progress Sensor Data...")
+        write_tasks = set()
         for node in self.payloads:
-            await aio.shield(self.save_sensor_data(node,
-                                                   self.payloads[node][:]))
+            write_tasks.add(self.save_sensor_data(node,
+                                                  self.payloads[node][:]))
             self.payloads[node].clear()
+
+        await aio.shield(aio.gather(*write_tasks))
