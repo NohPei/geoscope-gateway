@@ -1,15 +1,15 @@
 import logging
 import time
 import os
+import atexit
 import asyncio as aio
 from logging.handlers import ( QueueHandler,
                               TimedRotatingFileHandler,
                               QueueListener )
 from contextlib import AsyncExitStack
 from queue import SimpleQueue
-import uvloop
 import asyncio_mqtt as mqtt
-from sensor_logger import GeoAggregator
+from .logger import GeoAggregator
 
 
 ## Logging
@@ -26,32 +26,31 @@ JSON_LOG_TOPICS = ["geoscope/reply"]
 SENSOR_TOPIC_FILTER = "geoscope/node1/+"
 
 
-log_format = logging.Formatter( fmt="%(asctime)s %(levelname)s:%(name)s"
-                              "%(message)s", datefmt="%d%b%Y %H:%M:%S")
+log_format = logging.Formatter( fmt="%(asctime)s %(levelname)s:%(name)s %(message)s", datefmt="%d%b%Y %H:%M:%S")
 
-async def pignet(root_dir="/mnt/hdd/PigNet"):
-    os.makedirs(os.path.join(root_dir, "logs"), exist_ok=True)
+async def pignet(root_dir="/mnt/hdd/PigNet", broker_host="127.0.0.1", broker_port=18884):
+    await aio.to_thread(os.makedirs, os.path.join(root_dir, "logs"),
+                        exist_ok=True)
     file_log_handler = TimedRotatingFileHandler(os.path.join(root_dir, "logs",
                                                              log_file_base),
                                                 when='midnight', delay=True)
-    file_log_handler.setLevel(logging.INFO)
     file_log_handler.setFormatter(log_format)
 
     log_writer = QueueListener(log_queue, file_log_handler,
                                respect_handler_level=True)
-    async with AsyncExitStack as stack:
+
+    log_writer.start() # start saving logs to file
+    atexit.register(log_writer.stop)
+    # during a shutdown, flush the log buffer
+    async with AsyncExitStack() as stack:
         tasks = set()
         aggregator = GeoAggregator(storage_root=root_dir, log_name=logger.name+".Aggregator")
-
-        log_writer.start() # start saving logs to file
-        stack.push_async_callback(aio.to_thread(log_writer.stop()))
-        # during a shutdown, flush the log buffer
 
         stack.push_async_callback(aggregator.flush)
         # during stack unwind, flush all in-progress data
 
-        client = mqtt.Client("127.0.0.1", port=18884,
-                             logger=logging.getLogger(logger.name + ".Client"),
+        client = mqtt.Client(hostname=broker_host, port=broker_port,
+                             logger=logging.getLogger(logger.name+".Client "),
                              client_id=logger.name+"_Gateway",
                              clean_session=False)
 
@@ -72,7 +71,7 @@ async def pignet(root_dir="/mnt/hdd/PigNet"):
             await client.subscribe(topic)
 
         sensor_manager = client.filtered_messages(SENSOR_TOPIC_FILTER)
-        sensor_messages = stack.enter_async_context(sensor_manager)
+        sensor_messages = await stack.enter_async_context(sensor_manager)
         sensor_task = aio.create_task(aggregator.log_sensors(sensor_messages))
         tasks.add(sensor_task)
         await client.subscribe(SENSOR_TOPIC_FILTER)
@@ -82,19 +81,13 @@ async def pignet(root_dir="/mnt/hdd/PigNet"):
 
 
 
-async def maintain_mqtt(main_func):
+async def maintain_mqtt(main_func, *args, **kwargs):
     reconnect_interval = 0.5
     while True:
         try:
-            await main_func()
+            await main_func(*args, **kwargs)
         except mqtt.MqttError as error:
-            await aio.to_thread(logger.critical,"Client Error \"%s\". Retrying"
-                                "in %f s.", error, reconnect_interval)
+            logger.critical("Client Error \"%s\". Retrying" "in %f s.", error,
+                            reconnect_interval)
         finally:
             await aio.sleep(reconnect_interval)
-
-
-if __name__ == "__main__":
-    logger.info("## Starting full capture system")
-    uvloop.install()
-    aio.run(maintain_mqtt(pignet))
