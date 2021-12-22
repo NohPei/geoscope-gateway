@@ -4,7 +4,6 @@ from random import randint
 import asyncio as aio
 import os
 from datetime import datetime
-import aiofile as files
 
 class GeoAggregator:
     payloads = {}
@@ -14,6 +13,7 @@ class GeoAggregator:
     def __init__(self, storage_root="/mnt/hdd/PigNet/", log_name="GEOSCOPE.Subscriber"):
         self.root_path = storage_root
         self.logger = logging.getLogger(log_name)
+        self.logging_sensors = False
 
     async def save_sensor_data(self, node_id, data):
         save_time = datetime.now()
@@ -27,18 +27,24 @@ class GeoAggregator:
         # Create json file
         file_path = os.path.join(folder_path,
                                  save_time.strftime("%Y-%m-%dT%H-%M-%S.json"))
-        async with files.async_open(file_path, mode='w') as out_file:
-            await out_file.write(json.dumps(data))
+        out_file = await aio.to_thread(open, file_path, mode='w', encoding='utf=8')
+        await aio.to_thread(json.dump, out_file, data)
+        await aio.to_thread(out_file.close)
         self.logger.info("[%s]: %s file created", node_name,
                          os.path.basename(file_path))
 
 
-        this_task = aio.current_task()
-        if this_task in self.background_tasks:
-            self.background_tasks.remove(this_task)
+    async def _background_data_writer(self):
+        while self.logging_sensors:
+            done, pending = await aio.wait(self.background_tasks, return_when=aio.FIRST_COMPLETED)
+            for task in done:
+                self.background_tasks.remove(task)
 
 
     async def log_sensors(self, messages):
+        self.logging_sensors = True
+        background_manager = aio.create_task(self._background_data_writer())
+
         async for message in messages:
             msg_time = datetime.now()
             node_id = message.topic.split('/')[-1]
@@ -64,7 +70,10 @@ class GeoAggregator:
                 self.payloads[node_id].clear()
                 self.background_tasks.add(aio.create_task(save_this_sensor_coro))
 
-        await aio.gather(*self.background_tasks)
+        self.logging_sensors = False
+        await background_manager
+        aio.gather(*self.background_tasks)
+
 
 
 
