@@ -13,13 +13,23 @@ async def background_task_manager(task_queue):
 
 async def delete_bad_json(folder):
     folder = Path(folder)
-    async for file in folder.glob("**.json"):
+    del_queue = aio.Queue(maxsize=64)
+    bg_task = aio.create_task(background_task_manager(del_queue))
+
+    async def file_check(file):
         try:
             async with file.open(mode='r') as in_file:
                 contents = await in_file.read()
                 json.loads(contents)
         except ValueError:
             await file.unlink()
+
+
+    async for file in folder.glob("**/*.json"):
+        await del_queue.put(aio.create_task(file_check(file)))
+
+    await del_queue.join()
+    bg_task.cancel()
 
 
 class GeoAggregator:
