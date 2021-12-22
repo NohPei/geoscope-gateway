@@ -4,6 +4,7 @@ from random import randint
 import asyncio as aio
 import os
 from datetime import datetime
+import aiofile as files
 
 class GeoAggregator:
     payloads = {}
@@ -27,22 +28,20 @@ class GeoAggregator:
         # Create json file
         file_path = os.path.join(folder_path,
                                  save_time.strftime("%Y-%m-%dT%H-%M-%S.json"))
-        out_file = await aio.to_thread(open, file_path, mode='w', encoding='utf=8')
-        await aio.to_thread(json.dump, out_file, data)
-        await aio.to_thread(out_file.close)
+        async with files.async_open(file_path, mode='w') as out_file:
+            await out_file.write(json.dumps(data))
         self.logger.info("[%s]: %s file created", node_name,
                          os.path.basename(file_path))
 
 
     async def _background_data_writer(self):
-        while self.logging_sensors:
-            done, pending = await aio.wait(self.background_tasks, return_when=aio.FIRST_COMPLETED)
+        while True:
+            done, pending = await aio.shield(aio.wait(self.background_tasks, return_when=aio.FIRST_COMPLETED))
             for task in done:
                 self.background_tasks.remove(task)
 
 
     async def log_sensors(self, messages):
-        self.logging_sensors = True
         background_manager = aio.create_task(self._background_data_writer())
 
         async for message in messages:
@@ -70,9 +69,9 @@ class GeoAggregator:
                 self.payloads[node_id].clear()
                 self.background_tasks.add(aio.create_task(save_this_sensor_coro))
 
-        self.logging_sensors = False
-        await background_manager
+        background_manager.cancel()
         aio.gather(*self.background_tasks)
+        self.background_tasks.clear()
 
 
 
