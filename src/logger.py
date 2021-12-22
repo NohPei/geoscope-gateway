@@ -9,6 +9,7 @@ import aiofile as files
 class GeoAggregator:
     payloads = {}
     background_tasks = set()
+    save_trigger_count = {}
 
     def __init__(self, storage_root="/mnt/hdd/PigNet/", log_name="GEOSCOPE.Subscriber"):
         self.root_path = storage_root
@@ -51,12 +52,13 @@ class GeoAggregator:
 
             if node_id not in self.payloads:
                 self.payloads[node_id] = []
+                self.save_trigger_count[node_id] = randint(80,120)
 
             self.payloads[node_id].append(sensor_data)
             self.logger.debug("[%s] packet received (#%d)", node_id,
                               len(self.payloads[node_id]))
 
-            if len(self.payloads[node_id]) >= randint(50, 120):
+            if len(self.payloads[node_id]) >= self.save_trigger_count[node_id]:
                 save_this_sensor_coro = self.save_sensor_data(node_id,
                                                               self.payloads[node_id][:])
                 self.payloads[node_id].clear()
