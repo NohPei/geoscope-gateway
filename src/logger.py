@@ -11,6 +11,16 @@ async def background_task_manager(task_queue):
         await next_task
         task_queue.task_done()
 
+async def delete_bad_json(folder):
+    folder = Path(folder)
+    async for file in folder.glob("**.json"):
+        try:
+            async with file.open(mode='r') as in_file:
+                contents = await in_file.read()
+                json.loads(contents)
+        except ValueError:
+            await file.unlink()
+
 
 class GeoAggregator:
     payloads = {}
