@@ -2,17 +2,24 @@ import json
 import logging
 from random import randint
 import asyncio as aio
-import os
 from datetime import datetime
-import aiofile as files
+from aiopath import AsyncPath as Path
+
+async def background_task_manager(task_queue):
+    while True:
+        next_task = await task_queue.get()
+        await next_task
+        task_queue.task_done()
+
 
 class GeoAggregator:
     payloads = {}
     background_tasks = aio.Queue()
     save_trigger_count = {}
 
-    def __init__(self, storage_root="/mnt/hdd/PigNet/", log_name="GEOSCOPE.Subscriber"):
-        self.root_path = storage_root
+    def __init__(self, storage_root="/mnt/hdd/PigNet/",
+                 log_name="GEOSCOPE.Subscriber"):
+        self.root_path = Path(storage_root)
         self.logger = logging.getLogger(log_name)
         self.logging_sensors = False
 
@@ -21,29 +28,22 @@ class GeoAggregator:
         node_name = f"GEOSCOPE_SENSOR_{node_id}"
         self.logger.debug("[%s] Trying to write file", node_name)
 
-        folder_path = os.path.join(self.root_path, "data",
-                                   save_time.strftime("%Y-%m-%d"), node_name)
-        await aio.to_thread(os.makedirs, folder_path, exist_ok=True)
+        folder_path = (self.root_path / "data" / save_time.strftime("%Y-%m-%d")
+                       / node_name)
+        await folder_path.mkdir(parents=True, exist_ok=True)
 
         # Create json file
-        file_path = os.path.join(folder_path,
-                                 save_time.strftime("%Y-%m-%dT%H-%M-%S.json"))
-        async with files.async_open(file_path, mode='w') as out_file:
+        file_path = (folder_path /
+                     save_time.strftime("%Y-%m-%dT%H-%M-%S.json"))
+        async with file_path.open(mode='w', encoding='utf-8') as out_file:
             await out_file.write(json.dumps(data))
         self.logger.info("[%s]: %s file created", node_name,
-                         os.path.basename(file_path))
-
-
-    async def _background_manager(self, task_queue):
-        while True:
-            next_task = await task_queue.get()
-            await next_task
-            task_queue.task_done()
+                         file_path.name)
 
 
     async def log_sensors(self, messages):
         bg_write_tasks = aio.Queue()
-        bg_write_handler = aio.create_task(self._background_manager(bg_write_tasks))
+        bg_write_handler = aio.create_task(background_task_manager(bg_write_tasks))
 
         async for message in messages:
             msg_time = datetime.now()
@@ -80,7 +80,7 @@ class GeoAggregator:
     async def log_json_status(self, messages):
         async for message in messages:
             try:
-                log_info = json.loads(message.payload.decode("utf=8"))
+                log_info = json.loads(message.payload.decode("utf-8"))
                 self.logger.info("[%s]: %s", log_info["uuid"],
                                  log_info["data"])
             except json.decoder.JSONDecodeError:
@@ -94,9 +94,8 @@ class GeoAggregator:
     async def flush(self):
         self.logger.info("Dumping In-Progress Sensor Data...")
         write_tasks = set()
-        for node in self.payloads:
-            write_tasks.add(self.save_sensor_data(node,
-                                                  self.payloads[node][:]))
-            self.payloads[node].clear()
+        for node, payload in self.payloads.items():
+            write_tasks.add(self.save_sensor_data(node, payload[:]))
+            payload.clear()
 
         await aio.shield(aio.gather(*write_tasks))
