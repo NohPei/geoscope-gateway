@@ -18,7 +18,7 @@ class GeoEmulator:
         self.broker_port = port
 
     async def run(self, interval):
-        await maintain_mqtt(client_loop, interval)
+        await maintain_mqtt(self._client_loop, interval)
 
     async def _client_loop(self,interval):
         async with mqtt.Client(hostname=self.broker_host,
@@ -33,20 +33,20 @@ class GeoEmulator:
     async def _startup_messages(self, client):
         startup = {}
         startup["uuid"] = f"GEOSCOPE_{self.client_id}"
-        startup["sendTime"] = datetime.timestamp()
+        startup["sendTime"] = datetime.now().timestamp()
         startup["data"] = "[Device Started]"
         await client.publish(topic="geoscope/reply",
                             payload=json.dumps(startup))
 
-        startup["data"] = f'[Current Gain: {payload["gain"]}'
-        startup["sendTime"] = datetime.timestamp()
+        startup["data"] = f'[Current Gain]: {payload["gain"]}'
+        startup["sendTime"] = datetime.now().timestamp()
         await client.publish(topic="geoscope/reply",
                             payload=json.dumps(startup))
 
     async def _send_packet(self, client):
         toSend = payload
         toSend["uuid"] = f"GEOSCOPE_{self.client_id}"
-        toSend["sendTime"] = datetime.timestamp()
+        toSend["sendTime"] = datetime.now().timestamp()
         await client.publish(topic=f'geoscope/node1/{self.client_id}',
                             payload=json.dumps(toSend))
 
