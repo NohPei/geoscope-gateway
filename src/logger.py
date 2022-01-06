@@ -34,14 +34,14 @@ async def delete_bad_json(folder):
 
 class GeoAggregator:
     payloads = {}
-    background_tasks = aio.Queue()
     save_trigger_count = {}
 
     def __init__(self, storage_root="/mnt/hdd/PigNet/",
-                 log_name="GEOSCOPE.Subscriber"):
+                 log_name="GEOSCOPE.Subscriber", max_file_tasks=32):
         self.root_path = Path(storage_root)
         self.logger = logging.getLogger(log_name)
         self.logging_sensors = False
+        self.bg_task_limit = max_file_tasks
 
     async def save_sensor_data(self, node_id, data):
         save_time = datetime.now()
@@ -62,7 +62,7 @@ class GeoAggregator:
 
 
     async def log_sensors(self, messages):
-        bg_write_tasks = aio.Queue()
+        bg_write_tasks = aio.Queue(maxsize=self.bg_task_limit)
         bg_write_handler = aio.create_task(background_task_manager(bg_write_tasks))
 
         async for message in messages:
@@ -74,7 +74,7 @@ class GeoAggregator:
             except json.decoder.JSONDecodeError:
                 await self.json_error_log(message.payload)
                 continue
-            sensor_data["timestamp"] = round(msg_time.timestamp()*1000)
+            sensor_data["timestamp"] = int(msg_time.timestamp()*1000)
 
             if node_id not in self.payloads:
                 self.payloads[node_id] = []
