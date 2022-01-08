@@ -8,6 +8,7 @@ PartOf=mqtt-pignet.service
 Type=simple
 Restart=always
 TimeoutStopSec=1m
+KillSignal=SIGINT
 ExecStart=%h/bin/pignet.sh
 
 [Install]

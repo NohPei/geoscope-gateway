@@ -2,5 +2,6 @@
 
 BASEDIR="$(dirname "`realpath "$0"`")"
 
-source "$BASEDIR/../bin/activate"
-exec python "$BASEDIR/../src/main.py"
+cd "$BASEDIR/.."
+source "bin/activate"
+exec python -m geoscope_gateway
