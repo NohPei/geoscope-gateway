@@ -1,0 +1,14 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "olimex,a20-olinuxino-lime2", "allwinner,sun7i-a20";
+
+	fragment@0 {
+		target = <&gmac>;
+		__overlay__ {
+			phy-mode = "rgmii-id";
+		};
+	};
+
+};
