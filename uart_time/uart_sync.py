@@ -6,7 +6,7 @@ def serialMicrosLoop(port='/dev/ttyUSB0', baudrate=256000, repeat_sec=1, **kwarg
     out = serial.Serial(port, baudrate, **kwargs)
     try:
         while True:
-            time = int(datetime.now().timestamp())
+            time = int(datetime.now().timestamp()*1e6)
             out.write(sliplib.encode(f'{time:x}'.encode()))
             datetime.time.sleep(repeat_sec)
     finally:
