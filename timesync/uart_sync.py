@@ -9,7 +9,7 @@ class SerialMicrosSender(aio.Protocol):
 
     def send_timestamp(self):
         time = int(datetime.now().timestamp()*1e6)
-        self.transport.write(sliplib.encode(f'{time:x}'.encode()))
+        self.transport.write(sliplib.encode(time.to_bytes(8, byteorder='little')))
 
 
 async def serialMicrosLoop(port='/dev/ttyUSB0', baudrate=256000, repeat_sec=1):
