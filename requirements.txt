@@ -2,4 +2,4 @@ aiofile>=3.7
 aiopath
 asyncio-mqtt>=0.11
 sliplib>=0.6
-pyserial-asyncio>=0.6
+periphery>=2.0

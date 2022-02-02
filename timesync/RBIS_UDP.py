@@ -30,12 +30,16 @@ class UDPCountBroadcaster(aio.DatagramProtocol):
 async def RBIS_loop(target_address='10.244.0.255', port = 2323, rep_sec = 1):
     loop = aio.get_running_loop()
     broadcaster_done = loop.create_future()
-    await loop.create_datagram_endpoint(lambda:
-                                                              UDPCountBroadcaster(rep_sec, loop, broadcaster_done),
-                                                              remote_addr=(target_address,
-                                                                           port),
-                                                              allow_broadcast=True)
-    await broadcaster_done
+    try:
+       transport, protocol = await loop.create_datagram_endpoint(lambda:
+                                            UDPCountBroadcaster(rep_sec, loop, broadcaster_done),
+                                            remote_addr=(target_address,
+                                                         port),
+                                            allow_broadcast=True)
+        await broadcaster_done
+    finally:
+        transport.close()
+
 
 
 
