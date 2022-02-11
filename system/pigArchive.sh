@@ -22,9 +22,6 @@ archive_folder() {
 	fi
 }
 
-while read origdir; do
-	archive_folder "$origdir" &
-done < <( find "$PIGNET_DIR/data" -maxdepth 1 -mindepth 1 -type d )
+export -f archive_folder
 
-wait
-
+find "$PIGNET_DIR/data" -maxdepth 1 -mindepth 1 -type d -print0 | xargs -0 -I {} -P`nproc` bash -c 'archive_folder "$@"' _ {}
