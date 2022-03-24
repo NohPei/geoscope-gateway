@@ -1,3 +1,4 @@
 aiofile>=3.7
 aiopath
 asyncio-mqtt>=0.11
+ujson

@@ -1,8 +1,8 @@
-import json
 import logging
 from random import randint
 import asyncio as aio
 from datetime import datetime
+import ujson as json
 from aiopath import AsyncPath as Path
 
 async def background_task_manager(task_queue):

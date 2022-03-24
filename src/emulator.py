@@ -1,8 +1,8 @@
 #!/bin/python
 
-import json
 import asyncio as aio
 from datetime import datetime
+import ujson as json
 import asyncio_mqtt as mqtt
 from .pignet import maintain_mqtt
 
