@@ -5,6 +5,7 @@ import asyncio as aio
 import sliplib
 import periphery
 import asyncio_mqtt as mqtt
+from .pignet import maintain_mqtt
 
 
 async def pulse_gpio(gpio_dev, pulse_sec):
@@ -21,8 +22,13 @@ async def serialMicrosLoop(port='/dev/ttyUSB0', baudrate=256000, **kwargs):
     serial = periphery.Serial(port, baudrate)
     await timestampMicrosLoop(serial, **kwargs)
 
-async def mqttMicrosLoop(topic='geoscope/micros', broker_host='127.0.0.1', broker_port='18884', **kwargs):
-    pass
+async def mqttMicrosLoop(topic='geoscope/micros', broker_host='127.0.0.1',
+                         broker_port='18884', **kwargs):
+    def run_client():
+        client = mqtt.Client(hostname=broker_host, port=broker_port,
+                             clean_session=False,
+                             client_id="PigNet Timestamp Source")
+
 
 async def timestampMicrosLoop(output_context_mgr, repeat_sec=1, interrupt_pin=None):
     async with AsyncExitStack() as stack: # Manages device cleanup for us
