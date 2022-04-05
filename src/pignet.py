@@ -10,6 +10,7 @@ from queue import SimpleQueue
 from aiopath import AsyncPath
 import asyncio_mqtt as mqtt
 from .logger import GeoAggregator
+from .timesync import ESPSerialTime
 
 
 ## Logging
@@ -30,7 +31,7 @@ log_format = logging.Formatter( fmt="%(asctime)s %(levelname)s:%(name)s"
                                " %(message)s", datefmt="%d%b%Y %H:%M:%S")
 
 async def pignet(root_dir="/mnt/hdd/PigNet/", broker_host="127.0.0.1",
-                 broker_port=18884):
+                 broker_port=18884, time_sync: ESPSerialTime=None):
     log_dir = AsyncPath(root_dir) / "logs" # convert to path object
 
     await log_dir.mkdir(parents=True, exist_ok=True)
@@ -47,7 +48,9 @@ async def pignet(root_dir="/mnt/hdd/PigNet/", broker_host="127.0.0.1",
     # during a shutdown, flush the log buffer
     async with AsyncExitStack() as stack:
         tasks = set()
-        aggregator = GeoAggregator(storage_root=root_dir, log_name=logger.name+".Aggregator")
+        aggregator = GeoAggregator(storage_root=root_dir,
+                                   log_name=logger.name+".Aggregator",
+                                   timestamp_conversion=time_sync)
 
         stack.push_async_callback(aggregator.flush)
         # during stack unwind, flush all in-progress data

@@ -1,9 +1,11 @@
 import logging
 from random import randint
+from typing import Callable
 import asyncio as aio
 from datetime import datetime
 import ujson as json
 from aiopath import AsyncPath as Path
+from .timesync import ESPSerialTime
 
 async def background_task_manager(task_queue):
     while True:
@@ -37,11 +39,13 @@ class GeoAggregator:
     save_trigger_count = {}
 
     def __init__(self, storage_root="/mnt/hdd/PigNet/",
-                 log_name="GEOSCOPE.Subscriber", max_file_tasks=32):
+                 log_name="GEOSCOPE.Subscriber", max_file_tasks=32,
+                 timestamp_conversion: Callable[[int],int]=None):
         self.root_path = Path(storage_root)
         self.logger = logging.getLogger(log_name)
         self.logging_sensors = False
         self.bg_task_limit = max_file_tasks
+        self.correct_timestamp = timestamp_conversion
 
     async def save_sensor_data(self, node_id, data):
         save_time = datetime.now()
@@ -77,7 +81,9 @@ class GeoAggregator:
             except UnicodeDecodeError:
                 await self.json_error_log(message.payload)
                 continue
-            sensor_data["timestamp"] = int(msg_time.timestamp()*1000)
+            sensor_data["serverTime"] = round(msg_time.timestamp()*1000)
+            if self.correct_timestamp is not None:
+                sensor_data["timestamp"] = self.correct_timestamp(sensor_data["timestamp"])
 
             if node_id not in self.payloads:
                 self.payloads[node_id] = []
