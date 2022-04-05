@@ -2,3 +2,5 @@ aiofile>=3.7
 aiopath
 asyncio-mqtt>=0.11
 ujson
+sliplib>=0.6
+periphery>=2.0
