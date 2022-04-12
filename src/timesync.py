@@ -1,5 +1,5 @@
 from datetime import datetime
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, closing
 from io import IOBase
 import asyncio as aio
 import sliplib
@@ -25,9 +25,9 @@ async def send_timestamp(destination: IOBase):
     time_msg = sliplib.encode(time.to_bytes(8, byteorder='little'))
     await aio.to_thread(destination.write, time_msg)
 
-async def serialMicrosLoop(port='/dev/ttyUSB0', baudrate=256000, **kwargs):
+async def serialMicrosLoop(port='/dev/ttyUSB0', baudrate=115200, **kwargs):
     serial = periphery.Serial(port, baudrate)
-    await timestampMicrosLoop(serial, **kwargs)
+    await timestampMicrosLoop(closing(serial), **kwargs)
 
 async def mqttMicrosLoop(topic='geoscope/micros', broker_host='127.0.0.1',
                          broker_port='18884', **kwargs):
@@ -43,7 +43,7 @@ async def timestampMicrosLoop(output_context_mgr, repeat_sec=1, interrupt_pin=No
         output = stack.enter_context(output_context_mgr) # Activate whatever our output is
         gpio = None
         if interrupt_pin is not None: # if we've been told to run both, also set up the GPIO device
-            gpio = stack.enter_context(periphery.GPIO("/dev/gpiochip0", interrupt_pin, direction="out"))
+            gpio = stack.enter_context(closing(periphery.GPIO("/dev/gpiochip0", interrupt_pin, "out")))
 
         # main loop
         while True:
@@ -79,17 +79,20 @@ class ESPSerialTime():
         self.loop = None
 
     async def __get_ts_from_serial(self):
-        while (await aio.to_thread(self.serial.poll, 0)):
-            bytes_to_read = await aio.to_thread(self.serial.input_waiting)
+        bytes_to_read = await aio.to_thread(self.serial.input_waiting)
+        while (bytes_to_read > 0):
             await aio.to_thread(self.serial.read, length=bytes_to_read,
                                 timeout=0)
-        await aio.to_thread(self.serial.write, b't')
-        ts_bytes = await aio.to_thread(self.serial.read(length=8))
+            bytes_to_read = await aio.to_thread(self.serial.input_waiting)
+        ts_bytes = b''
+        while (len(ts_bytes) == 0):
+            await aio.to_thread(self.serial.write, b'p')
+            ts_bytes = await aio.to_thread(self.serial.read, length=8, timeout=1)
         return int.from_bytes(ts_bytes, byteorder='little', signed=True)
 
     async def timestamp_update(self):
         if self.loop is not None: # still running if we have a loop
-            self.loop.call_later(self.repeat_sec, self.timestamp_update)
+            self.loop.call_later(self.repeat_sec, aio.create_task, self.timestamp_update())
 
         async def get_ts_pair():
             self.local_buf.append(await pulse_gpio(self.gpio))
@@ -102,7 +105,7 @@ class ESPSerialTime():
         else:
             await get_ts_pair()
 
-        self.model = Polynomial.fit(np.array(local_buf), np.array(esp_buf),
+        self.model = Polynomial.fit(np.array(self.local_buf), np.array(self.esp_buf),
                                     deg=self.degree)
 
 

@@ -82,8 +82,12 @@ class GeoAggregator:
                 await self.json_error_log(message.payload)
                 continue
             sensor_data["serverTime"] = round(msg_time.timestamp()*1000)
-            if self.correct_timestamp is not None:
-                sensor_data["timestamp"] = self.correct_timestamp(sensor_data["timestamp"])
+            if self.correct_timestamp is None:
+                sensor_data["timestamp"] = sensor_data["serverTime"]
+                sensor_data["ts_tickHz"] = 1e3
+            else:
+                sensor_data["timestamp"] = self.correct_timestamp(sensor_data["sendTime"])
+                sensor_data["ts_tickHz"] = 1e6
 
             if node_id not in self.payloads:
                 self.payloads[node_id] = []

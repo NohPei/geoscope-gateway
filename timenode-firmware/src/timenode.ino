@@ -29,7 +29,7 @@ const char WIFI_SSID[] = "The Promised LAN";
 const char WIFI_PSK[] = "GoBucks!";
 
 #define SYNC_INTERRUPT digitalPinToInterrupt(D0)
-#define SERIAL_BAUD 256000
+#define SERIAL_BAUD 115200
 
 #define TSF_SEND_INTERVAL_MS 1000
 #define TSF_SEND_PORT 2323
