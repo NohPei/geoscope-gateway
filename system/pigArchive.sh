@@ -19,6 +19,11 @@ archive_folder() {
 		# verify the archive file
 		find "$1" -mtime +1 -delete
 		# if everything's fine, clear out old files (> 1 day) in the original directory
+		if [ $? -ne 0 ] && [ `find "$1" -type f | wc -l` -eq 0 ]; then
+			# if there's a problem, check if the folder is devoid of files but still has subfolders
+			rm -rv "$1"
+			# in that case, recursive remove it
+		fi
 	fi
 }
 
