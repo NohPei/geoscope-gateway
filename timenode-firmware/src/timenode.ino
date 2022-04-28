@@ -8,18 +8,6 @@
 
 #include "esp_undocumented.h"
 
-#ifdef BROADCAST_TSF
-# if defined(ESP8266)
-#  include<ESPAsyncUDP.h>
-# elif defined(ESP32)
-#  include<AsyncUDP.h>
-# else
-#  undef BROADCAST_TSF
-# endif
-#endif //defined(BROADCAST_TSF)
-
-
-volatile int64_t last_pulse_time;
  
 ///////////////////////////////////////////////////////////////////////////
 ////////////////////////// CONFIGURATION SECTION //////////////////////////
@@ -39,6 +27,19 @@ const char WIFI_PSK[] = "GoBucks!";
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+
+#ifdef BROADCAST_TSF
+# if defined(ESP8266)
+#  include<ESPAsyncUDP.h>
+# elif defined(ESP32)
+#  include<AsyncUDP.h>
+# else
+#  undef BROADCAST_TSF
+# endif
+#endif //defined(BROADCAST_TSF)
+
+
+volatile int64_t last_pulse_time;
 
 void IRAM_ATTR sync_pulse_isr(void) {
 	last_pulse_time = ESP_WDEV_TIMESTAMP();

@@ -78,7 +78,7 @@ class ESPSerialTime():
     async def stop(self):
         self.loop = None
 
-    async def __get_ts_from_serial(self):
+    async def get_serial_ts(self):
         bytes_to_read = await aio.to_thread(self.serial.input_waiting)
         while (bytes_to_read > 0):
             await aio.to_thread(self.serial.read, length=bytes_to_read,
@@ -96,7 +96,7 @@ class ESPSerialTime():
 
         async def get_ts_pair():
             self.local_buf.append(await pulse_gpio(self.gpio))
-            self.esp_buf.append(await self.__get_ts_from_serial())
+            self.esp_buf.append(await self.get_serial_ts())
 
 
         if self.model is None:
