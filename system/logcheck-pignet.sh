@@ -1,42 +1,14 @@
 #!/bin/sh
 
-STORAGE=/mnt/hdd/PigNet/
-
 FROM="`id -un`@`uname -n`"
 TO="PigNetErrors@umich.edu"
-SUBJECT="[logcheck-pignet@`uname -n`] PigNet Error Notice"
+SUBJECT="[logcheck-pignet@Home-Server] PigNet-USMARC Error Notice"
 
-if [ ! -d "$STORAGE" ]; then
-	mail -a "$STATUS_LOG" -s "$SUBJECT" "$TO" << EOF
-From: $FROM
+rclone ls --max-age 6h usda:Geophone\ Data/data/ --fast-list | grep -q zip && exit 0
+# check the remote folder, and exit if there are files within the last 8 hours
 
-Storage Device is not Mounted. No data can be logged.
-
-<<THIS IS SENT FROM AN AUTOMATED SCRIPT>>
-EOF
-	exit 0
-fi
-
-if [ `find $STORAGE/data -type f -mmin -360 | wc -l` -gt 0 ]; then
-	exit 0
-fi
-
-# find most recent logfiles to send
-DEVICE_LOG="`ls $STORAGE/log/GEOSCOPE* -t | head -n1`"
-DEVICE_LOG_LAST="`ls $STORAGE/log/GEOSCOPE* -t | tail -n+2 | head -n1`"
-
-if [ -z $DEVICE_LOG_LAST ]; then # for when the log hasn't been rotated yet
-	DEVICE_LOG_LAST="$DEVICE_LOG"
-fi
-
-
-
-
-mail -a "$DEVICE_LOG" -a "$DEVICE_LOG_LAST" -s "$SUBJECT" "$TO" << EOF
-From: $FROM
-
-Latest Geophone data is more than 6 hours old. There's probably a problem.
-Check attached logs and system status.
+mail -s "$SUBJECT" -r "$FROM" "$TO" << EOF
+Latest Uploaded Geophone data is more than 6 hours old. There's probably a problem.
 
 <<THIS IS SENT FROM AN AUTOMATED SCRIPT>>
 EOF
