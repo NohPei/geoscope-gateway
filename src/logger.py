@@ -71,7 +71,10 @@ class GeoAggregator:
 
             try:
                 sensor_data = json.loads(message.payload.decode("utf-8"))
-            except json.decoder.JSONDecodeError:
+            except json.JSONDecodeError:
+                await self.json_error_log(message.payload)
+                continue
+            except UnicodeDecodeError:
                 await self.json_error_log(message.payload)
                 continue
             sensor_data["timestamp"] = int(msg_time.timestamp()*1000)
@@ -103,7 +106,9 @@ class GeoAggregator:
                 log_info = json.loads(message.payload.decode("utf-8"))
                 self.logger.info("[%s]: %s", log_info["uuid"],
                                  log_info["data"])
-            except json.decoder.JSONDecodeError:
+            except json.JSONDecodeError:
+                await self.json_error_log(message.payload)
+            except UnicodeDecodeError:
                 await self.json_error_log(message.payload)
 
 
