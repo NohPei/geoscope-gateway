@@ -1,0 +1,27 @@
+/dts-v1/;
+/plugin/;
+
+
+/ {
+	metadata {
+		title = "Enable PPS Input on GPIO1_B1";
+		compatible = "rockchip,rk3399";
+		category = "misc";
+		exclusive = "GPIO1_B1";
+		description = "Enable PPS on GPIO1_B1.\nOn ROCK 4 this is pin 23.";
+	};
+
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			pps: pps-r4-23 {
+				compatible = "pps-gpio";
+				pinctrl-names = "default";
+				gpios = <&gpio1 9 0>;
+					//GPIO1(&gpio1) B1(9) ACTIVE_HIGH(0)
+				status = "okay";
+			};
+		};
+	};
+
+};
