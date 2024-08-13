@@ -10,7 +10,7 @@ dynamic = ["version"]
 dependencies = [
 	"aiofile>=3.7",
 	"aiopath",
-	"asyncio-mqtt>=0.11",
+	"aiomqtt>=2.0",
 	"ujson",
 	"sliplib>=0.6",
 	"python-periphery>=2.0",

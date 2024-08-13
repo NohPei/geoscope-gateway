@@ -1,15 +1,22 @@
+import asyncio as aio
+import atexit
 import logging
 import time
-import atexit
-import asyncio as aio
-from logging.handlers import QueueHandler, TimedRotatingFileHandler, QueueListener
 from contextlib import AsyncExitStack
+from logging.handlers import QueueHandler, QueueListener, TimedRotatingFileHandler
 from queue import SimpleQueue
-from aiopath import AsyncPath
-import asyncio_mqtt as mqtt
-from .logger import GeoAggregator
-from .timesync import ESPSerialTime
 
+import aiomqtt as mqtt
+from aiopath import AsyncPath
+
+from .logger import GeoAggregator
+
+__all__ = [
+    "logger",
+    "geophonePriorityQueue",
+    "pignet",
+    "maintain_mqtt",
+]
 
 ## Logging
 
@@ -30,11 +37,22 @@ log_format = logging.Formatter(
 )
 
 
+class geophonePriorityQueue(aio.PriorityQueue):
+    def _put(self, item: mqtt.Message):
+        if item.topic.matches(SENSORS_TOPIC):
+            priority = 1
+        elif item.topic.matches(JSON_LOG_TOPICS):
+            priority = 2
+        else:
+            priority = 3
+        super()._put((priority, item))
+
+    def _get(self):
+        return super()._get()[1]
+
+
 async def pignet(
-    root_dir="/mnt/hdd/PigNet/",
-    broker_host="127.0.0.1",
-    broker_port=18884,
-    time_sync: ESPSerialTime = None,
+    root_dir="/mnt/hdd/PigNet/", broker_host="127.0.0.1", broker_port=18884
 ):
     log_dir = AsyncPath(root_dir) / "logs"  # convert to path object
 
@@ -45,17 +63,19 @@ async def pignet(
     )
     file_log_handler.setFormatter(log_format)
 
+    global log_queue
     log_writer = QueueListener(log_queue, file_log_handler, respect_handler_level=True)
 
     log_writer.start()  # start saving logs to file
     atexit.register(log_writer.stop)
     # during a shutdown, flush the log buffer
     async with AsyncExitStack() as stack:
-        tasks = set()
+        tasks = aio.TaskGroup()
+        await stack.enter_async_context(tasks)
         aggregator = GeoAggregator(
+            background_task_group=tasks,
             storage_root=root_dir,
             log_name=logger.name + ".Aggregator",
-            timestamp_conversion=time_sync,
         )
 
         stack.push_async_callback(aggregator.flush)
@@ -67,28 +87,29 @@ async def pignet(
             logger=logging.getLogger(logger.name + ".Client "),
             client_id=logger.name + "_Gateway",
             clean_session=False,
+            queue_type=geophonePriorityQueue,
         )
 
         await stack.enter_async_context(client)
 
         for topic in LOG_TOPICS:
-            messages = await stack.enter_async_context(client.filtered_messages(topic))
-            tasks.add(aio.create_task(aggregator.log_status(messages)))
             await client.subscribe(topic)
 
         for topic in JSON_LOG_TOPICS:
-            manager = client.filtered_messages(topic)
-            messages = await stack.enter_async_context(manager)
-            tasks.add(aio.create_task(aggregator.log_json_status(messages)))
             await client.subscribe(topic)
 
-        sensor_messages = await stack.enter_async_context(
-            client.filtered_messages(SENSORS_TOPIC)
-        )
-        tasks.add(aio.create_task(aggregator.log_sensors(sensor_messages)))
         await client.subscribe(SENSORS_TOPIC)
 
-        await aio.gather(*tasks)
+        async for message in client.messages:
+            if message.topic.matches(SENSORS_TOPIC):
+                tasks.create_task(aggregator.log_sensor(message))
+            else:
+                for topic in JSON_LOG_TOPICS:
+                    if message.topic.matches(topic):
+                        tasks.create_task(aggregator.log_json_status(message))
+                for topic in LOG_TOPICS:
+                    if message.topic.matches(topic):
+                        await tasks.create_task(aggregator.log_status(message))
 
 
 async def maintain_mqtt(main_func, *args, **kwargs):
