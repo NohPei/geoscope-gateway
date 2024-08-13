@@ -11,7 +11,8 @@ from dvg_ringbuffer import RingBuffer
 
 
 def system_micros_timestamp():
-    return round(datetime.now().timestamp()*1e6) % 2**63
+    return round(datetime.now().timestamp() * 1e6) % 2**63
+
 
 async def pulse_gpio(gpio_dev: IOBase, pulse_sec=0.1):
     await aio.to_thread(gpio_dev.write, True)
@@ -20,45 +21,67 @@ async def pulse_gpio(gpio_dev: IOBase, pulse_sec=0.1):
     await aio.to_thread(gpio_dev.write, False)
     return pulse_time
 
+
 async def send_timestamp(destination: IOBase):
     time = system_micros_timestamp()
-    time_msg = sliplib.encode(time.to_bytes(8, byteorder='little'))
+    time_msg = sliplib.encode(time.to_bytes(8, byteorder="little"))
     await aio.to_thread(destination.write, time_msg)
 
-async def serialMicrosLoop(port='/dev/ttyUSB0', baudrate=115200, **kwargs):
+
+async def serialMicrosLoop(port="/dev/ttyUSB0", baudrate=115200, **kwargs):
     serial = periphery.Serial(port, baudrate)
     await timestampMicrosLoop(closing(serial), **kwargs)
 
-async def mqttMicrosLoop(topic='geoscope/micros', broker_host='127.0.0.1',
-                         broker_port='18884', **kwargs):
-    def run_client():
-        client = mqtt.Client(hostname=broker_host, port=broker_port,
-                             clean_session=False,
-                             client_id="PigNet Timestamp Source")
+
+async def mqttMicrosLoop(
+    topic="geoscope/micros", broker_host="127.0.0.1", broker_port="18884", **kwargs
+):
+    pass
+    # def run_client():
+    #     client = mqtt.Client(
+    #         hostname=broker_host,
+    #         port=broker_port,
+    #         clean_session=False,
+    #         client_id="PigNet Timestamp Source",
+    #     )
 
 
 async def timestampMicrosLoop(output_context_mgr, repeat_sec=1, interrupt_pin=None):
-    async with AsyncExitStack() as stack: # Manages device cleanup for us
+    async with AsyncExitStack() as stack:  # Manages device cleanup for us
         tasks = set()
-        output = stack.enter_context(output_context_mgr) # Activate whatever our output is
+        output = stack.enter_context(
+            output_context_mgr
+        )  # Activate whatever our output is
         gpio = None
-        if interrupt_pin is not None: # if we've been told to run both, also set up the GPIO device
-            gpio = stack.enter_context(closing(periphery.GPIO("/dev/gpiochip0", interrupt_pin, "out")))
+        if (
+            interrupt_pin is not None
+        ):  # if we've been told to run both, also set up the GPIO device
+            gpio = stack.enter_context(
+                closing(periphery.GPIO("/dev/gpiochip0", interrupt_pin, "out"))
+            )
 
         # main loop
         while True:
-            if gpio is not None: # if GPIO is set up, also pulse the interrupt pin
-                tasks.add(pulse_gpio(gpio, repeat_sec/10))
+            if gpio is not None:  # if GPIO is set up, also pulse the interrupt pin
+                tasks.add(pulse_gpio(gpio, repeat_sec / 10))
             tasks.add(send_timestamp(output))
-            await aio.gather(*tasks) # start both tasks roughly simultaneously
+            await aio.gather(*tasks)  # start both tasks roughly simultaneously
             tasks.clear()
             await aio.sleep(repeat_sec)
 
-class ESPSerialTime():
+
+class ESPSerialTime:
     model = None
     loop = None
 
-    def __init__(self, serial_port: periphery.Serial, gpio_port: periphery.GPIO, interval_sec=2.0, poly_order=2, buf_len=500):
+    def __init__(
+        self,
+        serial_port: periphery.Serial,
+        gpio_port: periphery.GPIO,
+        interval_sec=2.0,
+        poly_order=2,
+        buf_len=500,
+    ):
         self.serial = serial_port
         self.gpio = gpio_port
         self.repeat_sec = interval_sec
@@ -80,24 +103,24 @@ class ESPSerialTime():
 
     async def get_serial_ts(self):
         bytes_to_read = await aio.to_thread(self.serial.input_waiting)
-        while (bytes_to_read > 0):
-            await aio.to_thread(self.serial.read, length=bytes_to_read,
-                                timeout=0)
+        while bytes_to_read > 0:
+            await aio.to_thread(self.serial.read, length=bytes_to_read, timeout=0)
             bytes_to_read = await aio.to_thread(self.serial.input_waiting)
-        ts_bytes = b''
-        while (len(ts_bytes) == 0):
-            await aio.to_thread(self.serial.write, b'p')
+        ts_bytes = b""
+        while len(ts_bytes) == 0:
+            await aio.to_thread(self.serial.write, b"p")
             ts_bytes = await aio.to_thread(self.serial.read, length=8, timeout=1)
-        return int.from_bytes(ts_bytes, byteorder='little', signed=True)
+        return int.from_bytes(ts_bytes, byteorder="little", signed=True)
 
     async def timestamp_update(self):
-        if self.loop is not None: # still running if we have a loop
-            self.loop.call_later(self.repeat_sec, aio.create_task, self.timestamp_update())
+        if self.loop is not None:  # still running if we have a loop
+            self.loop.call_later(
+                self.repeat_sec, aio.create_task, self.timestamp_update()
+            )
 
         async def get_ts_pair():
             self.local_buf.append(await pulse_gpio(self.gpio))
             self.esp_buf.append(await self.get_serial_ts())
-
 
         if self.model is None:
             for i in np.arange(self.degree + 1):
@@ -105,14 +128,15 @@ class ESPSerialTime():
         else:
             await get_ts_pair()
 
-        self.model = Polynomial.fit(np.array(self.local_buf), np.array(self.esp_buf),
-                                    deg=self.degree)
-
+        self.model = Polynomial.fit(
+            np.array(self.local_buf), np.array(self.esp_buf), deg=self.degree
+        )
 
     def __call__(self, timestamp: int):
         if self.model is None:
             return timestamp
         return round(self.model(timestamp))
+
 
 class UDPTimestampBroadcaster(aio.DatagramProtocol):
     def __init__(self, repeat_sec, loop, disconn_future):
@@ -134,21 +158,20 @@ class UDPTimestampBroadcaster(aio.DatagramProtocol):
     def send(self):
         self.loop.call_later(self.repeat_time, self.send)
         current_time = system_micros_timestamp()
-            # get the current time as as 64-bit microseconds count
-        self.transport.sendto(current_time.to_bytes(8, byteorder='little'))
+        # get the current time as as 64-bit microseconds count
+        self.transport.sendto(current_time.to_bytes(8, byteorder="little"))
         # send that timestamp as a 64b little-endian int
 
-async def UDPMicrosLoop(target_address='10.244.0.255', port = 2323, rep_sec = 1):
+
+async def UDPMicrosLoop(target_address="10.244.0.255", port=2323, rep_sec=1):
     loop = aio.get_running_loop()
     broadcaster_done = loop.create_future()
     try:
-        endpoint_coro = loop.create_datagram_endpoint(lambda:
-                                                      UDPTimestampBroadcaster(rep_sec,
-                                                                              loop,
-                                                                              broadcaster_done),
-                                                      remote_addr=(target_address,
-                                                                   port),
-                                                      allow_broadcast=True)
+        endpoint_coro = loop.create_datagram_endpoint(
+            lambda: UDPTimestampBroadcaster(rep_sec, loop, broadcaster_done),
+            remote_addr=(target_address, port),
+            allow_broadcast=True,
+        )
         transport, protocol = await endpoint_coro
         await broadcaster_done
     finally:

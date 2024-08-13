@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=64", "wheel", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geoscope_gateway"
+authors = [{name = "Jesse R Codling", email = "codling@umich.edu"}]
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+	"aiofile>=3.7",
+	"aiopath",
+	"asyncio-mqtt>=0.11",
+	"ujson",
+	"sliplib>=0.6",
+	"python-periphery>=2.0",
+	"dvg-ringbuffer>=1.0"]
+requires-python = ">=3.12"
+
+[project.urls]
+Home = "https://github.com/NohPei/geoscope-gateway"
+
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [ "F401", "F403" ]
