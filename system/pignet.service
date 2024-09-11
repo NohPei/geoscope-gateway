@@ -3,10 +3,12 @@ Description=PigNet MQTT Broker Service
 Requires=mqtt-pignet.service
 After=mqtt-pignet.service
 PartOf=mqtt-pignet.service
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 Restart=always
+RestartSec=3
 TimeoutStopSec=1m
 KillSignal=SIGINT
 ExecStart=%h/bin/pignet.sh
