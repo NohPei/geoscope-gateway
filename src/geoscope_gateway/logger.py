@@ -53,12 +53,12 @@ class GeoAggregator:
 
         # Create json file
         file_path = folder_path / save_time.strftime("%Y-%m-%dT%H-%M-%S.json")
-        async with file_path.open(mode="w", encoding="utf-8") as out_file:
+        async with file_path.open(mode="wb") as out_file:
             await out_file.write(json.dumps(data))
         self.logger.info("[%s]: %s file created", node_name, file_path.name)
 
     async def log_sensor(self, message, timestamp=datetime.now()):
-        node_id = message.topic.split("/")[-1]
+        node_id = message.topic.value.split("/")[-1]
 
         try:
             sensor_data = json.loads(message.payload.decode("utf-8"))
@@ -104,8 +104,9 @@ class GeoAggregator:
 
     async def flush(self):
         self.logger.info("Dumping In-Progress Sensor Data...")
-        async with aio.TaskGroup() as write_tasks:
-            for node, payload in self.payloads.items():
-                save_this_sensor_coro = self.save_sensor_data(node, payload[:])
-                payload.clear()
-                write_tasks.create_task(aio.shield(save_this_sensor_coro))
+        write_tasks = set()
+        for node, payload in self.payloads.items():
+            save_this_sensor_coro = self.save_sensor_data(node, payload[:])
+            payload.clear()
+            write_tasks.add(aio.shield(save_this_sensor_coro))
+        await aio.gather(*write_tasks)

@@ -38,10 +38,17 @@ log_format = logging.Formatter(
 
 
 class geophonePriorityQueue(aio.PriorityQueue):
+    @staticmethod
+    def _matches_any(item: mqtt.Message, topic_list: list):
+        for topic in topic_list:
+            if item.topic.matches(topic):
+                return True
+        return False
+
     def _put(self, item: mqtt.Message):
         if item.topic.matches(SENSORS_TOPIC):
             priority = 1
-        elif item.topic.matches(JSON_LOG_TOPICS):
+        elif self._matches_any(item, JSON_LOG_TOPICS):
             priority = 2
         else:
             priority = 3
@@ -73,7 +80,7 @@ async def pignet(
         tasks = aio.TaskGroup()
         await stack.enter_async_context(tasks)
         aggregator = GeoAggregator(
-            background_task_group=tasks,
+            task_group=tasks,
             storage_root=root_dir,
             log_name=logger.name + ".Aggregator",
         )
@@ -85,7 +92,7 @@ async def pignet(
             hostname=broker_host,
             port=broker_port,
             logger=logging.getLogger(logger.name + ".Client "),
-            client_id=logger.name + "_Gateway",
+            identifier=logger.name + "_Gateway",
             clean_session=False,
             queue_type=geophonePriorityQueue,
         )
