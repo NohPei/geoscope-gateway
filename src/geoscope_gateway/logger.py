@@ -3,7 +3,7 @@ from random import randint
 from typing import Callable
 import asyncio as aio
 from datetime import datetime
-import ujson as json
+import orjson as json
 from aiopath import AsyncPath as Path
 
 
