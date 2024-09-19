@@ -3,7 +3,7 @@
 import asyncio as aio
 from datetime import datetime
 import orjson as json
-import asyncio_mqtt as mqtt
+import aiomqtt as mqtt
 from .pignet import maintain_mqtt
 
 payload = {}
@@ -24,7 +24,7 @@ class GeoEmulator:
         async with mqtt.Client(
             hostname=self.broker_host,
             port=self.broker_port,
-            client_id=f"GEOSCOPE_{self.client_id}",
+            identifier=f"GEOSCOPE_{self.client_id}",
             clean_session=True,
         ) as client:
             await self._startup_messages(client)
@@ -57,14 +57,11 @@ async def emulate_sensors(
     client_list=[], broker="PigServer-USMARC.pignet", port=18884, interval=0.5
 ):
     emulators = set()
-    tasks = set()
-    for node_id in client_list:
-        new_sensor = GeoEmulator(node_id, broker, port)
-        emulators.add(new_sensor)
-        loop_task = aio.create_task(new_sensor.run(interval))
-        tasks.add(loop_task)
-
-    await aio.gather(*tasks)
+    async with aio.TaskGroup() as tg:
+        for node_id in client_list:
+            new_sensor = GeoEmulator(node_id, broker, port)
+            emulators.add(new_sensor)
+            tg.create_task(new_sensor.run(interval))
 
 
 if __name__ == "__main__":
