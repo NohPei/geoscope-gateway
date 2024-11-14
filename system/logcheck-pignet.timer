@@ -2,9 +2,9 @@
 Description=PigNet Log Verify Timer
 
 [Timer]
-OnBootSec=1h
-RandomizedDelaySec=1h
-OnUnitActiveSec=6h
+OnBootSec=30m
+RandomizedDelaySec=30m
+OnUnitActiveSec=1h
 
 [Install]
 WantedBy=timers.target

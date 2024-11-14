@@ -10,12 +10,12 @@ dynamic = ["version"]
 dependencies = [
 	"aiofile>=3.7",
 	"aiopath",
-	"asyncio-mqtt>=0.11",
-	"ujson",
+	"aiomqtt>=2.0",
+	"orjson >= 3.0",
 	"sliplib>=0.6",
 	"python-periphery>=2.0",
 	"dvg-ringbuffer>=1.0"]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 
 [project.urls]
 Home = "https://github.com/NohPei/geoscope-gateway"

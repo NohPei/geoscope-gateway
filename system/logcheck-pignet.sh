@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 STORAGE=/mnt/hdd/PigNet/
 
