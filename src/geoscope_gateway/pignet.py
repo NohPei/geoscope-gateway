@@ -1,7 +1,7 @@
 import asyncio as aio
 import atexit
 import logging
-import time
+from datetime import datetime
 from contextlib import AsyncExitStack
 from logging.handlers import QueueHandler, QueueListener, TimedRotatingFileHandler
 from queue import SimpleQueue
@@ -24,7 +24,7 @@ logger = logging.getLogger("GEOSCOPE")
 logger.setLevel(logging.INFO)
 log_queue = SimpleQueue()
 logger.addHandler(QueueHandler(log_queue))
-log_file_base = f"GEOSCOPE-{time.strftime('%Y-%m-%d')}.log"
+log_file_base = f"GEOSCOPE-{datetime.now().astimezone().strftime('%Y-%m-%d')}.log"
 
 
 LOG_TOPICS = ["$SYS/broker/log/E", "$SYS/broker/log/W"]
@@ -77,8 +77,7 @@ async def pignet(
     atexit.register(log_writer.stop)
     # during a shutdown, flush the log buffer
     async with AsyncExitStack() as stack:
-        tasks = aio.TaskGroup()
-        await stack.enter_async_context(tasks)
+        tasks = await stack.enter_async_context(aio.TaskGroup())
         aggregator = GeoAggregator(
             task_group=tasks,
             storage_root=root_dir,
@@ -88,7 +87,7 @@ async def pignet(
         stack.push_async_callback(aggregator.flush)
         # during stack unwind, flush all in-progress data
 
-        client = mqtt.Client(
+        mqtt_mgr = mqtt.Client(
             hostname=broker_host,
             port=broker_port,
             logger=logging.getLogger(logger.name + ".Client "),
@@ -97,7 +96,7 @@ async def pignet(
             queue_type=geophonePriorityQueue,
         )
 
-        await stack.enter_async_context(client)
+        client = await stack.enter_async_context(mqtt_mgr)
 
         for topic in LOG_TOPICS:
             await client.subscribe(topic)
@@ -109,7 +108,8 @@ async def pignet(
 
         async for message in client.messages:
             if message.topic.matches(SENSORS_TOPIC):
-                tasks.create_task(aggregator.log_sensor(message))
+                recv_time = datetime.now().astimezone()
+                tasks.create_task(aggregator.log_sensor(message, recv_time))
             else:
                 for topic in JSON_LOG_TOPICS:
                     if message.topic.matches(topic):

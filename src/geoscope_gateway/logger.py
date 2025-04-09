@@ -42,7 +42,7 @@ class GeoAggregator:
         self.bg_task_manager = task_group
 
     async def save_sensor_data(self, node_id, data):
-        save_time = datetime.now()
+        save_time = datetime.now().astimezone()
         node_name = f"GEOSCOPE_SENSOR_{node_id}"
         self.logger.debug("[%s] Trying to write file", node_name)
 
@@ -57,7 +57,7 @@ class GeoAggregator:
             await out_file.write(json.dumps(data))
         self.logger.info("[%s]: %s file created", node_name, file_path.name)
 
-    async def log_sensor(self, message, timestamp=datetime.now()):
+    async def log_sensor(self, message, timestamp):
         node_id = message.topic.value.split("/")[-1]
 
         try:
