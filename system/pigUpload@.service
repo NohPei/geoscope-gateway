@@ -8,6 +8,11 @@ Type=oneshot
 Environment=PIGNET_DIR="/media/hdd/"
 Environment=REMOTE_PATH="PigNet/"
 
+Nice=19
+CPUSchedulingPolicy=idle
+IOSchedulingClass=idle
+CPUQuota=50%
+
 ExecStartPre=%h/bin/pigArchive.sh
 ExecStart=/usr/bin/rclone copy "${PIGNET_DIR}" %i":${REMOTE_PATH}" -v --local-no-check-updated --exclude 'data/*/'
 
