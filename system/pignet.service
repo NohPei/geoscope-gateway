@@ -1,8 +1,5 @@
 [Unit]
-Description=PigNet MQTT Broker Service
-Requires=mqtt-pignet.service
-After=mqtt-pignet.service
-PartOf=mqtt-pignet.service
+Description=PigNet MQTT Data Logger service
 StartLimitIntervalSec=0
 
 [Service]
