@@ -84,9 +84,6 @@ async def pignet(
             log_name=logger.name + ".Aggregator",
         )
 
-        stack.push_async_callback(aggregator.flush)
-        # during stack unwind, flush all in-progress data
-
         mqtt_mgr = mqtt.Client(
             hostname=broker_host,
             port=broker_port,
@@ -97,6 +94,9 @@ async def pignet(
         )
 
         client = await stack.enter_async_context(mqtt_mgr)
+
+        stack.push_async_callback(aggregator.flush)
+        # during stack unwind, flush all in-progress data
 
         for topic in LOG_TOPICS:
             await client.subscribe(topic)
