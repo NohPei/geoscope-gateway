@@ -33,7 +33,7 @@ SENSORS_TOPIC = "geoscope/node1/+"
 
 
 log_format = logging.Formatter(
-    fmt="%(asctime)s %(levelname)s:%(name)s" " %(message)s", datefmt="%d%b%Y %H:%M:%S"
+    fmt="%(asctime)s %(levelname)s:%(name)s %(message)s", datefmt="%d%b%Y %H:%M:%S"
 )
 
 
@@ -126,7 +126,7 @@ async def maintain_mqtt(main_func, *args, **kwargs):
             await main_func(*args, **kwargs)
         except mqtt.MqttError as error:
             logger.critical(
-                'Client Error "%s". Retrying' "in %f s.", error, reconnect_interval
+                'Client Error "%s". Retryingin %f s.', error, reconnect_interval
             )
         finally:
             await aio.sleep(reconnect_interval)

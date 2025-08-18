@@ -38,7 +38,7 @@ class GeoEmulator:
         startup["data"] = "[Device Started]"
         await client.publish(topic="geoscope/reply", payload=json.dumps(startup))
 
-        startup["data"] = f'[Current Gain]: {payload["gain"]}'
+        startup["data"] = f"[Current Gain]: {payload['gain']}"
         await client.publish(topic="geoscope/reply", payload=json.dumps(startup))
 
     async def _send_packet(self, client):
