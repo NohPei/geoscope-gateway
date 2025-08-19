@@ -88,7 +88,7 @@ class GeoAggregator:
             self.bg_task_manager.create_task(save_this_sensor_coro)
 
     async def json_error_log(self, payload: str):
-        self.logger.error("Invalid JSON Packet:" "\n-----\n%s\n-----\n", payload)
+        self.logger.error("Invalid JSON Packet:\n-----\n%s\n-----\n", payload)
 
     async def log_json_status(self, message):
         try:
