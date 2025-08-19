@@ -126,7 +126,7 @@ async def maintain_mqtt(main_func, *args, **kwargs):
             await main_func(*args, **kwargs)
         except mqtt.MqttError as error:
             logger.critical(
-                'Client Error "%s". Retryingin %f s.', error, reconnect_interval
+                'Client Error "%s". Retrying in %f s.', error, reconnect_interval
             )
         finally:
             await aio.sleep(reconnect_interval)
