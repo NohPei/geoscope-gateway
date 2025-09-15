@@ -36,3 +36,6 @@ repos:
       - id: conventional-pre-commit
         stages: [commit-msg]
         args: []
+
+ci:
+  autoupdate_schedule: monthly
